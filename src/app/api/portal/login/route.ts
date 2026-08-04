@@ -16,7 +16,7 @@ function getStudentCredentials() {
   return {
     studentId: process.env.PORTAL_DEMO_STUDENT_ID ?? "NLSC2026",
     password: process.env.PORTAL_DEMO_PASSWORD ?? "nlsc@student",
-    name: process.env.PORTAL_DEMO_STUDENT_NAME ?? "NLSC Student",
+    name: process.env.PORTAL_DEMO_STUDENT_NAME ?? "Priya Fernando",
   };
 }
 

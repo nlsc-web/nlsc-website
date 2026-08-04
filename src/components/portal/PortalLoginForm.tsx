@@ -125,10 +125,10 @@ export default function PortalLoginForm() {
   const isAdmin = role === "admin";
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-nlsc-body-bg lg:flex-row">
+    <div className="flex min-h-screen w-full flex-col bg-nlsc-body-bg lg:flex-row lg:min-h-0 lg:h-screen lg:overflow-hidden">
       <PortalBrandPanel />
 
-      <div className="relative flex flex-1 items-center justify-center px-6 py-16 lg:px-12 lg:py-20">
+      <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14 lg:px-12 lg:py-20">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_85%_15%,rgba(212,175,55,0.07),transparent_45%)]" />
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-nlsc-gold/0 via-nlsc-gold/25 to-nlsc-gold/0 lg:hidden" />
 

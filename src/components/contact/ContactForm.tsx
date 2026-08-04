@@ -107,7 +107,6 @@ export default function ContactForm() {
             suppressHydrationWarning
           >
             <option>General inquiry</option>
-            <option>Admissions</option>
             <option>Course information</option>
             <option>Other</option>
           </select>

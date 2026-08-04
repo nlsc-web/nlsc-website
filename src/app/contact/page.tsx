@@ -100,7 +100,7 @@ export default function ContactPage() {
       </section>
 
       <section className="bg-nlsc-surface px-6 py-24">
-        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-2 md:gap-12">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-nlsc-gold-text">
               Campus Information
@@ -155,7 +155,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-nlsc-border bg-nlsc-surface p-8 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_8px_24px_rgba(17,24,39,0.05)]">
+          <div className="rounded-xl border border-nlsc-border bg-nlsc-surface p-5 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_8px_24px_rgba(17,24,39,0.05)] sm:p-6 md:p-8">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-nlsc-gold-text">
               Send a Message
             </p>

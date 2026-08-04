@@ -59,7 +59,7 @@ export default async function PortalCoursePage({ params }: CoursePageProps) {
           </p>
           <h1
             className="mt-2 text-2xl font-bold sm:text-3xl"
-            style={{ color: lmsTokens.ink, fontFamily: "Georgia, serif" }}
+            style={{ color: lmsTokens.ink }}
           >
             {course.title}
           </h1>
@@ -101,10 +101,10 @@ export default async function PortalCoursePage({ params }: CoursePageProps) {
           {course.modules.map((module, index) => (
             <article
               key={module.id}
-              className="flex items-center justify-between gap-4 rounded-xl border bg-white px-5 py-4"
+              className="flex flex-col gap-3 rounded-xl border bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
               style={{ borderColor: lmsTokens.line }}
             >
-              <div>
+              <div className="min-w-0 flex-1">
                 <p
                   className="text-[10px] font-bold uppercase tracking-wider"
                   style={{ color: lmsTokens.slate }}
@@ -120,7 +120,7 @@ export default async function PortalCoursePage({ params }: CoursePageProps) {
               </div>
               <button
                 type="button"
-                className="shrink-0 rounded-md border px-4 py-2 text-[10px] font-semibold uppercase tracking-wider transition hover:text-white"
+                className="w-full shrink-0 rounded-md border px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider transition hover:text-white sm:w-auto sm:py-2"
                 style={{
                   borderColor: lmsTokens.gold500,
                   color: lmsTokens.gold500,

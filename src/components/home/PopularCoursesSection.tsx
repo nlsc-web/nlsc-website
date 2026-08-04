@@ -46,7 +46,7 @@ export default function PopularCoursesSection() {
           fast-track learning to a complete professional foundation.
         </p>
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
           {courses.map((course) => (
             <PopularCourseCard key={course.title} {...course} />
           ))}

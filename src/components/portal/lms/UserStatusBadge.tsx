@@ -14,14 +14,14 @@ const statusMap: Record<
   { bg: string; fg: string; label: string; icon: StatusIcon }
 > = {
   pending: {
-    bg: "#FBF0DF",
+    bg: lmsTokens.gold50,
     fg: lmsTokens.warn,
     label: "Pending",
     icon: ClockIcon,
   },
   active: {
-    bg: "#E6F2EC",
-    fg: lmsTokens.good,
+    bg: lmsTokens.gold100,
+    fg: lmsTokens.gold600,
     label: "Active",
     icon: CheckCircleIcon,
   },
@@ -33,16 +33,24 @@ const statusMap: Record<
   },
 };
 
-export default function UserStatusBadge({ status }: { status: UserStatus }) {
+export default function UserStatusBadge({
+  status,
+  compact = false,
+}: {
+  status: UserStatus;
+  compact?: boolean;
+}) {
   const config = statusMap[status];
   const Icon = config.icon;
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full font-medium ${
+        compact ? "gap-1 px-2 py-0.5 text-[10px]" : "gap-1.5 px-2.5 py-1 text-xs"
+      }`}
       style={{ backgroundColor: config.bg, color: config.fg }}
     >
-      <Icon size={12} />
+      <Icon size={compact ? 10 : 12} />
       {config.label}
     </span>
   );

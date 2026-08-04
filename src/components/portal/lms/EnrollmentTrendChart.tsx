@@ -1,195 +1,254 @@
 "use client";
 
 import { lmsTokens } from "@/lib/portal/lms-tokens";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type EnrollmentTrendChartProps = {
   data: Array<{ month: string; students: number }>;
 };
 
-function smoothPath(
-  points: Array<{ x: number; y: number }>,
-): string {
-  if (points.length < 2) return "";
-  let d = `M ${points[0].x},${points[0].y}`;
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-  }
-  return d;
+const SLICE_COLORS = [
+  lmsTokens.gold500,
+  "#eab64d",
+  "#c9a030",
+  "#f0d078",
+  "#b8922a",
+  lmsTokens.navy900,
+];
+
+/** Stable SVG coords — avoids server/client float hydration mismatches. */
+function roundCoord(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: roundCoord(cx + r * Math.cos(rad)),
+    y: roundCoord(cy + r * Math.sin(rad)),
+  };
+}
+
+function describeDonutSlice(
+  cx: number,
+  cy: number,
+  innerR: number,
+  outerR: number,
+  startAngle: number,
+  endAngle: number,
+) {
+  const startOuter = polarToCartesian(cx, cy, outerR, endAngle);
+  const endOuter = polarToCartesian(cx, cy, outerR, startAngle);
+  const startInner = polarToCartesian(cx, cy, innerR, startAngle);
+  const endInner = polarToCartesian(cx, cy, innerR, endAngle);
+  const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
+
+  return [
+    `M ${startOuter.x} ${startOuter.y}`,
+    `A ${outerR} ${outerR} 0 ${largeArc} 0 ${endOuter.x} ${endOuter.y}`,
+    `L ${startInner.x} ${startInner.y}`,
+    `A ${innerR} ${innerR} 0 ${largeArc} 1 ${endInner.x} ${endInner.y}`,
+    "Z",
+  ].join(" ");
+}
+
+function toMonthlySlices(data: EnrollmentTrendChartProps["data"]) {
+  return data.map((point, index) => {
+    const previous = index > 0 ? data[index - 1].students : 0;
+    const newStudents = index === 0 ? point.students : point.students - previous;
+    return {
+      month: point.month,
+      value: newStudents,
+      total: point.students,
+    };
+  });
 }
 
 export default function EnrollmentTrendChart({ data }: EnrollmentTrendChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const max = Math.max(...data.map((p) => p.students));
-  const min = Math.min(...data.map((p) => p.students));
-  const paddedMax = max + Math.ceil((max - min) * 0.08);
-  const paddedMin = Math.max(0, min - Math.ceil((max - min) * 0.08));
-  const range = paddedMax - paddedMin || 1;
+  const slices = useMemo(() => toMonthlySlices(data), [data]);
+  const total = slices.reduce((sum, slice) => sum + slice.value, 0);
+  const latestTotal = data[data.length - 1]?.students ?? total;
 
-  const width = 560;
-  const height = 200;
-  const padLeft = 36;
-  const padRight = 12;
-  const padTop = 16;
-  const padBottom = 8;
-  const chartW = width - padLeft - padRight;
-  const chartH = height - padTop - padBottom;
+  const cx = 140;
+  const cy = 140;
+  const innerR = 62;
+  const baseOuterR = 104;
+  const activeOuterR = 108;
 
-  const points = data.map((point, index) => {
-    const x = padLeft + (index / (data.length - 1)) * chartW;
-    const y = padTop + chartH - ((point.students - paddedMin) / range) * chartH;
-    return { x, y, ...point, index };
-  });
+  const arcs = useMemo(() => {
+    let cursor = 0;
+    return slices.map((slice, index) => {
+      const angle = total > 0 ? (slice.value / total) * 360 : 0;
+      const startAngle = cursor;
+      const endAngle = cursor + angle;
+      cursor = endAngle;
+      const isActive = activeIndex === index;
+      const sliceOuterR = isActive ? activeOuterR : baseOuterR;
+      const midAngle = startAngle + angle / 2;
+      const labelR = (innerR + sliceOuterR) / 2;
+      const labelPos = polarToCartesian(cx, cy, labelR, midAngle);
+      const showLabel = angle >= 14;
 
-  const linePath = smoothPath(points);
-  const curveOnly = linePath.replace(/^M [\d.]+,[\d.]+ /, "");
-  const bottom = padTop + chartH;
-  const areaPath = `M ${points[0].x},${bottom} L ${points[0].x},${points[0].y} ${curveOnly} L ${points[points.length - 1].x},${bottom} Z`;
+      return {
+        ...slice,
+        index,
+        startAngle,
+        endAngle,
+        angle,
+        color: SLICE_COLORS[index % SLICE_COLORS.length],
+        path: describeDonutSlice(
+          cx,
+          cy,
+          innerR,
+          isActive ? sliceOuterR + 4 : sliceOuterR,
+          startAngle,
+          endAngle,
+        ),
+        labelPos,
+        showLabel,
+        percent: total > 0 ? Math.round((slice.value / total) * 100) : 0,
+      };
+    });
+  }, [slices, total, activeIndex]);
 
-  const yTicks = [0, 1, 2, 3].map((i) => {
-    const value = Math.round(paddedMax - (i / 3) * (paddedMax - paddedMin));
-    const y = padTop + (i / 3) * chartH;
-    return { value, y };
-  });
-
-  const active = activeIndex !== null ? points[activeIndex] : null;
+  const active = activeIndex !== null ? arcs[activeIndex] : null;
 
   return (
-    <div className="relative">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="h-[220px] w-full"
-        preserveAspectRatio="xMidYMid meet"
-        role="img"
-        aria-label="Enrollment trend from March to August"
-      >
-        <defs>
-          <linearGradient id="enrollmentFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={lmsTokens.gold500} stopOpacity="0.22" />
-            <stop offset="85%" stopColor={lmsTokens.gold500} stopOpacity="0.04" />
-          </linearGradient>
-          <filter id="dotGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor={lmsTokens.gold500} floodOpacity="0.35" />
-          </filter>
-        </defs>
-
-        {yTicks.map(({ value, y }) => (
-          <g key={value}>
-            <line
-              x1={padLeft}
-              x2={width - padRight}
-              y1={y}
-              y2={y}
-              stroke={lmsTokens.line}
-              strokeWidth="1"
-              strokeDasharray={value === paddedMin ? "0" : "4 4"}
-            />
-            <text
-              x={padLeft - 8}
-              y={y + 4}
-              textAnchor="end"
-              fill={lmsTokens.slate}
-              fontSize="10"
-              fontFamily="system-ui, sans-serif"
-            >
-              {value}
-            </text>
-          </g>
-        ))}
-
-        <path d={areaPath} fill="url(#enrollmentFill)" />
-        <path
-          d={linePath}
-          fill="none"
-          stroke={lmsTokens.gold500}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {points.map((point) => {
-          const isActive = activeIndex === point.index;
-          return (
-            <g key={point.month}>
-              {isActive && (
-                <line
-                  x1={point.x}
-                  x2={point.x}
-                  y1={padTop}
-                  y2={padTop + chartH}
-                  stroke={lmsTokens.gold500}
-                  strokeWidth="1"
-                  strokeDasharray="3 3"
-                  opacity={0.5}
-                />
-              )}
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r={isActive ? 6 : 4.5}
-                fill={lmsTokens.gold500}
-                stroke="#fff"
-                strokeWidth="2"
-                filter={isActive ? "url(#dotGlow)" : undefined}
-                className="cursor-pointer transition-all duration-150"
-                onMouseEnter={() => setActiveIndex(point.index)}
-                onMouseLeave={() => setActiveIndex(null)}
-                onFocus={() => setActiveIndex(point.index)}
-                onBlur={() => setActiveIndex(null)}
-                tabIndex={0}
-                role="button"
-                aria-label={`${point.month}: ${point.students} students`}
-              />
-            </g>
-          );
-        })}
-      </svg>
-
-      {active && (
-        <div
-          className="pointer-events-none absolute z-10 rounded-md border bg-white px-2.5 py-1.5 text-center shadow-md"
-          style={{
-            borderColor: lmsTokens.line,
-            left: `${(active.index / (data.length - 1)) * 100}%`,
-            top: "8%",
-            transform: "translateX(-50%)",
-          }}
+    <div className="flex flex-col items-center gap-6 md:flex-row md:items-center md:justify-start md:gap-10 lg:gap-12">
+      <div className="relative shrink-0">
+        <svg
+          viewBox="0 0 280 280"
+          className="h-[260px] w-[260px] sm:h-[280px] sm:w-[280px]"
+          role="img"
+          aria-label="Enrollment distribution by month"
         >
-          <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: lmsTokens.gold500 }}>
-            {active.month}
-          </p>
-          <p className="text-sm font-semibold" style={{ color: lmsTokens.ink, fontFamily: "Georgia, serif" }}>
-            {active.students}
-          </p>
-          <p className="text-[10px]" style={{ color: lmsTokens.slate }}>
+          {arcs.map((arc) => (
+            <path
+              key={arc.month}
+              d={arc.path}
+              fill={arc.color}
+              stroke="#fff"
+              strokeWidth="2"
+              className="cursor-pointer transition-opacity duration-150"
+              opacity={activeIndex === null || activeIndex === arc.index ? 1 : 0.45}
+              onMouseEnter={() => setActiveIndex(arc.index)}
+              onMouseLeave={() => setActiveIndex(null)}
+              onClick={() =>
+                setActiveIndex((current) => (current === arc.index ? null : arc.index))
+              }
+              onFocus={() => setActiveIndex(arc.index)}
+              onBlur={() => setActiveIndex(null)}
+              tabIndex={0}
+              role="button"
+              aria-label={`${arc.month}: ${arc.value} new enrollments, ${arc.percent}%`}
+            />
+          ))}
+          {arcs.map(
+            (arc) =>
+              arc.showLabel && (
+                <text
+                  key={`${arc.month}-label`}
+                  x={arc.labelPos.x}
+                  y={arc.labelPos.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={arc.color === lmsTokens.navy900 ? "#fff" : lmsTokens.navy900}
+                  fontSize="12"
+                  fontWeight="600"
+                  fontFamily="inherit"
+                  pointerEvents="none"
+                >
+                  {arc.percent}%
+                </text>
+              ),
+          )}
+          <text
+            x={cx}
+            y={cy - 8}
+            textAnchor="middle"
+            fill={lmsTokens.ink}
+            fontSize="26"
+            fontWeight="600"
+            fontFamily="inherit"
+          >
+            {latestTotal}
+          </text>
+          <text
+            x={cx}
+            y={cy + 16}
+            textAnchor="middle"
+            fill={lmsTokens.slate}
+            fontSize="11"
+            fontWeight="500"
+            fontFamily="inherit"
+          >
             students
-          </p>
-        </div>
-      )}
+          </text>
+        </svg>
 
-      <div
-        className="grid text-[11px] font-medium"
-        style={{
-          color: lmsTokens.slate,
-          gridTemplateColumns: `repeat(${data.length}, 1fr)`,
-          paddingLeft: `${(padLeft / width) * 100}%`,
-          paddingRight: `${(padRight / width) * 100}%`,
-        }}
-      >
-        {data.map((point) => (
-          <span key={point.month} className="text-center">
-            {point.month}
-          </span>
-        ))}
+        {active && (
+          <div
+            className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1 rounded-md border bg-white px-3 py-2 text-center shadow-md"
+            style={{ borderColor: lmsTokens.line }}
+          >
+            <p
+              className="text-[10px] font-bold uppercase tracking-wide"
+              style={{ color: lmsTokens.gold500 }}
+            >
+              {active.month}
+            </p>
+            <p className="text-sm font-semibold" style={{ color: lmsTokens.ink }}>
+              +{active.value} new
+            </p>
+            <p className="text-[10px]" style={{ color: lmsTokens.slate }}>
+              {active.total} total · {active.percent}%
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="w-full min-w-0 md:w-auto md:flex-1 md:max-w-xs lg:max-w-sm">
+        <p
+          className="mb-3 text-[11px] font-bold uppercase tracking-[0.12em]"
+          style={{ color: lmsTokens.slate }}
+        >
+          New enrollments by month
+        </p>
+        <ul className="space-y-2.5">
+          {arcs.map((arc) => (
+            <li key={arc.month}>
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-nlsc-gold/10"
+                onMouseEnter={() => setActiveIndex(arc.index)}
+                onMouseLeave={() => setActiveIndex(null)}
+                onClick={() =>
+                  setActiveIndex((current) => (current === arc.index ? null : arc.index))
+                }
+              >
+                <span
+                  className="h-3 w-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: arc.color }}
+                  aria-hidden
+                />
+                <span className="flex-1 text-sm font-medium" style={{ color: lmsTokens.ink }}>
+                  {arc.month}
+                </span>
+                <span className="text-sm tabular-nums" style={{ color: lmsTokens.slate }}>
+                  {arc.value}
+                </span>
+                <span
+                  className="w-10 text-right text-xs font-semibold tabular-nums"
+                  style={{ color: lmsTokens.gold500 }}
+                >
+                  {arc.percent}%
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

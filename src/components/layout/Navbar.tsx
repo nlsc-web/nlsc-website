@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
 import { PORTAL_PATH } from "@/lib/site-config";
 
@@ -18,22 +18,29 @@ export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   return (
     <header className="sticky top-0 z-50 overflow-hidden shadow-[0_4px_28px_rgba(0,0,0,0.35)]">
       <div className="nlsc-brand-surface absolute inset-0" aria-hidden />
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nlsc-gold/80 to-transparent" />
 
-      <div className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-        <Link href="/" className="flex items-center gap-3">
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-3.5">
+        <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Image
             src="/nlsc-logo.png"
             alt="Next Level Solutions Campus"
             width={64}
             height={64}
-            className="h-12 w-12 object-contain sm:h-14 sm:w-14"
+            className="h-10 w-10 shrink-0 object-contain sm:h-12 sm:w-12 md:h-14 md:w-14"
             priority
           />
-          <span className="hidden text-[13px] font-semibold uppercase tracking-[0.14em] text-white/90 lg:block">
+          <span className="hidden truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-white/90 sm:block sm:max-w-[9rem] sm:text-[12px] md:max-w-none md:text-[13px] md:tracking-[0.14em] lg:max-w-none">
             Next Level Solutions Campus
           </span>
         </Link>
@@ -45,7 +52,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-md px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] transition-all duration-200 ${
+                className={`rounded-md px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] transition-all duration-200 lg:px-4 lg:py-2.5 lg:text-[11px] lg:tracking-[0.16em] ${
                   isActive
                     ? "bg-nlsc-gold text-nlsc-black shadow-[0_2px_12px_rgba(212,175,55,0.35)]"
                     : "text-white/85 hover:bg-nlsc-gold/20 hover:text-nlsc-gold"
@@ -57,10 +64,10 @@ export default function Navbar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link
             href={PORTAL_PATH}
-            className="hidden rounded-md border border-nlsc-gold bg-nlsc-gold px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-nlsc-black transition-all duration-300 hover:border-nlsc-gold hover:bg-transparent hover:text-nlsc-gold sm:inline-flex"
+            className="hidden rounded-md border border-nlsc-gold bg-nlsc-gold px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-nlsc-black transition-all duration-300 hover:border-nlsc-gold hover:bg-transparent hover:text-nlsc-gold sm:inline-flex lg:px-5 lg:py-2.5 lg:text-[11px] lg:tracking-[0.16em]"
           >
             Student portal
           </Link>
@@ -88,7 +95,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <nav className="relative border-t border-nlsc-gold/30 px-6 py-4 md:hidden">
+        <nav className="relative max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-nlsc-gold/30 px-4 py-4 sm:px-6 md:hidden">
           <div className="nlsc-brand-surface absolute inset-0" aria-hidden />
           <div className="relative flex flex-col gap-1">
             {navLinks.map((link) => {

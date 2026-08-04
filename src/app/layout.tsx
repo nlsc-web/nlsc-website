@@ -35,6 +35,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,7 +55,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="min-h-full">
+      <body className={`${inter.className} min-h-full font-sans antialiased`}>
         <ThemeProvider>
           <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
         </ThemeProvider>

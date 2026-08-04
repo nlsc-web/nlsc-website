@@ -4,14 +4,25 @@ export const lmsTokens = {
   navy800: "#141414",
   navy700: "#1f1f1f",
   gold500: "#d4af37",
+  gold600: "#b8922a",
   gold100: "#f5edd4",
-  bg: "#ececec",
+  gold50: "#fbf6e8",
+  /** Warm cream page background — no cool gray/blue tint */
+  bg: "#f7f3ea",
+  /** Search bars & subtle fills */
+  surface: "#fbf6e8",
   ink: "#0a0a0a",
   slate: "#525252",
   line: "rgb(212 175 55 / 0.22)",
   good: "#2d6a4f",
   warn: "#8f6f18",
   bad: "#b3432e",
+};
+
+/** Brand pill/badge styling for dashboard metrics */
+export const lmsBrandPill = {
+  bg: "#f5edd4",
+  fg: "#8f6f18",
 };
 
 export const lmsRuledBackground = {

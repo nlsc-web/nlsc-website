@@ -17,7 +17,7 @@ function GradeBar({ course, grade, color }: GradeBarProps) {
       </div>
       <div
         className="h-2 w-full rounded-full"
-        style={{ backgroundColor: "#EDEFF3" }}
+        style={{ backgroundColor: lmsTokens.gold100 }}
       >
         <div
           className="h-2 rounded-full"

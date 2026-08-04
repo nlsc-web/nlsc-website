@@ -5,25 +5,27 @@ import {
   CalendarCheckIcon,
   ChevronRightIcon,
   ClipboardListIcon,
-  ClockIcon,
   LayoutDashboardIcon,
   MegaphoneIcon,
+  SettingsIcon,
 } from "@/components/portal/lms/icons";
-import GradeSummaryChart from "@/components/portal/lms/GradeSummaryChart";
+import DashboardPanelHead from "@/components/portal/lms/DashboardPanelHead";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PortalShell from "@/components/portal/lms/PortalShell";
+import PortalSettingsView from "@/components/portal/lms/PortalSettingsView";
 import StatCard from "@/components/portal/lms/StatCard";
 import StatusBadge from "@/components/portal/lms/StatusBadge";
-import { lmsTokens } from "@/lib/portal/lms-tokens";
+import StudentAssignmentsView from "@/components/portal/lms/StudentAssignmentsView";
+import StudentAttendanceView from "@/components/portal/lms/StudentAttendanceView";
+import StudentCoursesView from "@/components/portal/lms/StudentCoursesView";
+import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
 import {
-  getGreetingName,
-  gradeData,
+  getDashboardGreeting,
   studentAnnouncements,
   studentAssignments,
   studentCourses,
-  weekSchedule,
 } from "@/lib/portal/student-data";
 
 type StudentDashboardViewProps = {
@@ -31,127 +33,159 @@ type StudentDashboardViewProps = {
   studentId: string;
 };
 
-export default function StudentDashboardView({
-  studentName,
-  studentId,
-}: StudentDashboardViewProps) {
-  const router = useRouter();
-  const [active, setActive] = useState("Dashboard");
-  const firstName = getGreetingName(studentName);
+const navItems = [
+  { icon: LayoutDashboardIcon, label: "Dashboard" },
+  { icon: BookOpenIcon, label: "My Courses" },
+  { icon: ClipboardListIcon, label: "Assignments" },
+  { icon: CalendarCheckIcon, label: "Attendance" },
+  { icon: SettingsIcon, label: "Settings" },
+];
+
+function StudentDashboardHome({
+  greeting,
+  onNavigate,
+}: {
+  greeting: string;
+  onNavigate: (label: string) => void;
+}) {
   const pendingCount = studentAssignments.filter(
     (item) => item.status === "pending",
   ).length;
 
-  const navItems = [
-    { icon: LayoutDashboardIcon, label: "Dashboard" },
-    { icon: BookOpenIcon, label: "My Courses" },
-    { icon: ClipboardListIcon, label: "Assignments" },
-    { icon: CalendarCheckIcon, label: "Attendance" },
-  ];
-
-  async function handleLogout() {
-    await fetch("/api/portal/logout", { method: "POST" });
-    router.push("/portal");
-    router.refresh();
-  }
+  const sortedAssignments = [...studentAssignments].sort((a, b) => {
+    const order = { pending: 0, overdue: 1, submitted: 2 };
+    return order[a.status] - order[b.status];
+  });
 
   return (
-    <PortalShell
-      userName={studentName}
-      userId={studentId}
-      navItems={navItems}
-      active={active}
-      onNavigate={setActive}
-      onLogout={handleLogout}
-    >
-      <div className="mb-6">
-        <h1
-          className="text-2xl"
-          style={{ color: lmsTokens.ink, fontFamily: "Georgia, serif" }}
+    <div className="mx-auto w-full max-w-[1400px]">
+      {/* Page header — admin-style with actions */}
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div
+          className="border-l-[3px] pl-5"
+          style={{ borderColor: lmsTokens.gold500 }}
         >
-          Good morning, {firstName}
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: lmsTokens.slate }}>
-          Here&apos;s where things stand for your NLSC programs.
-        </p>
+          <p
+            className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: lmsTokens.gold500 }}
+          >
+            Student Dashboard
+          </p>
+          <h1
+            className="text-2xl font-semibold tracking-tight sm:text-[1.75rem]"
+            style={{ color: lmsTokens.ink }}
+            suppressHydrationWarning
+          >
+            {greeting}
+          </h1>
+          <p className="mt-1.5 text-sm" style={{ color: lmsTokens.slate }}>
+            Here&apos;s where things stand for your NLSC programs.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => onNavigate("My Courses")}
+            className="inline-flex items-center gap-2 rounded-lg border border-nlsc-gold/25 bg-white px-5 py-2.5 text-sm font-semibold transition-colors hover:border-nlsc-gold/55 hover:bg-nlsc-gold/5"
+            style={{ color: lmsTokens.ink }}
+          >
+            <BookOpenIcon size={15} />
+            My Courses
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("Assignments")}
+            className="inline-flex items-center gap-2 rounded-lg border border-nlsc-gold bg-nlsc-gold px-5 py-2.5 text-sm font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text"
+          >
+            <ClipboardListIcon size={15} />
+            Assignments
+          </button>
+        </div>
       </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Enrolled Courses" value={String(studentCourses.length)} />
+      {/* KPI row — full stat cards like admin */}
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatCard
+          label="Enrolled Courses"
+          value={String(studentCourses.length)}
+          sub="Active programs"
+          accent={lmsTokens.gold500}
+          subPill
+        />
         <StatCard
           label="Pending Assignments"
           value={String(pendingCount)}
-          sub="Check due dates below"
-          accent={lmsTokens.warn}
+          sub={pendingCount > 0 ? "Check due dates below" : "All caught up"}
+          accent={pendingCount > 0 ? lmsTokens.warn : lmsTokens.good}
+          subPill
         />
         <StatCard
           label="Attendance"
           value="92%"
           sub="Above required 80%"
           accent={lmsTokens.good}
-        />
-        <StatCard
-          label="Average Grade"
-          value="78%"
-          sub="Across enrolled courses"
-          accent={lmsTokens.good}
+          subPill
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-6 lg:col-span-2">
-          <section
-            className="rounded-lg border bg-white p-5"
-            style={{ borderColor: lmsTokens.line }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold" style={{ color: lmsTokens.ink }}>
-                My Courses
-              </h2>
-              <span
-                className="flex items-center gap-1 text-xs font-medium"
-                style={{ color: lmsTokens.gold500 }}
-              >
-                View all <ChevronRightIcon size={13} />
-              </span>
-            </div>
+      {/* Main grid — admin 8+4 layout */}
+      <div className="grid gap-6 xl:grid-cols-12 xl:items-start">
+        <div className="space-y-6 xl:col-span-8">
+          {/* My Courses — full-width panel */}
+          <section className="lms-panel-card p-5 sm:p-6">
+            <DashboardPanelHead
+              title="My Courses"
+              icon={<BookOpenIcon size={16} color={lmsTokens.gold500} />}
+              action={
+                <button
+                  type="button"
+                  onClick={() => onNavigate("My Courses")}
+                  className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{ color: lmsTokens.gold500 }}
+                >
+                  View all <ChevronRightIcon size={13} />
+                </button>
+              }
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               {studentCourses.map((course) => (
                 <Link
                   key={course.id}
                   href={`/portal/dashboard/courses/${course.id}`}
-                  className="rounded-md border p-4 transition hover:shadow-sm"
-                  style={{ borderColor: lmsTokens.line }}
+                  className="group rounded-lg border border-nlsc-gold/15 p-4 transition-colors hover:border-nlsc-gold/40 hover:bg-nlsc-gold/5"
                 >
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <span
                       className="rounded px-2 py-0.5 text-[11px] font-semibold"
                       style={{
-                        backgroundColor: lmsTokens.gold100,
-                        color: lmsTokens.navy800,
+                        backgroundColor: lmsBrandPill.bg,
+                        color: lmsBrandPill.fg,
                       }}
                     >
                       {course.code}
                     </span>
                     <span
-                      className="text-xs font-medium"
-                      style={{ color: lmsTokens.slate }}
+                      className="text-xs font-semibold tabular-nums"
+                      style={{ color: lmsTokens.gold600 }}
                     >
                       {course.progress}%
                     </span>
                   </div>
-                  <div className="text-sm font-semibold" style={{ color: lmsTokens.ink }}>
+                  <p
+                    className="text-sm font-semibold leading-snug"
+                    style={{ color: lmsTokens.ink }}
+                  >
                     {course.name}
-                  </div>
-                  <div className="mb-3 mt-0.5 text-xs" style={{ color: lmsTokens.slate }}>
+                  </p>
+                  <p className="mt-0.5 text-xs" style={{ color: lmsTokens.slate }}>
                     {course.instructor}
-                  </div>
+                  </p>
                   <div
-                    className="h-1.5 w-full rounded-full"
-                    style={{ backgroundColor: "#EDEFF3" }}
+                    className="mt-3 h-1.5 w-full overflow-hidden rounded-full"
+                    style={{ backgroundColor: lmsTokens.gold100 }}
                   >
                     <div
-                      className="h-1.5 rounded-full"
+                      className="h-full rounded-full transition-all group-hover:opacity-90"
                       style={{
                         width: `${course.progress}%`,
                         backgroundColor: course.color,
@@ -163,107 +197,183 @@ export default function StudentDashboardView({
             </div>
           </section>
 
-          <section
-            className="rounded-lg border bg-white p-5"
-            style={{ borderColor: lmsTokens.line }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold" style={{ color: lmsTokens.ink }}>
-                Upcoming Assignments
-              </h2>
-            </div>
-            <div className="flex flex-col divide-y" style={{ borderColor: lmsTokens.line }}>
-              {studentAssignments.map((assignment) => (
-                <div
-                  key={`${assignment.course}-${assignment.title}`}
-                  className="flex items-center justify-between py-3"
+          {/* Upcoming Assignments */}
+          <section className="lms-panel-card p-5 sm:p-6">
+            <DashboardPanelHead
+              title="Upcoming Assignments"
+              icon={<ClipboardListIcon size={16} color={lmsTokens.gold500} />}
+              badge={
+                pendingCount > 0 ? (
+                  <span
+                    className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style={{
+                      backgroundColor: lmsBrandPill.bg,
+                      color: lmsBrandPill.fg,
+                    }}
+                  >
+                    {pendingCount} pending
+                  </span>
+                ) : undefined
+              }
+              action={
+                <button
+                  type="button"
+                  onClick={() => onNavigate("Assignments")}
+                  className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-80"
+                  style={{ color: lmsTokens.gold500 }}
                 >
-                  <div>
-                    <div className="text-sm font-medium" style={{ color: lmsTokens.ink }}>
+                  View all <ChevronRightIcon size={13} />
+                </button>
+              }
+            />
+            <ul className="space-y-2.5">
+              {sortedAssignments.map((assignment) => (
+                <li
+                  key={assignment.id}
+                  className="flex items-center gap-3 rounded-lg border border-nlsc-gold/15 px-3 py-3 transition-colors hover:bg-nlsc-gold/5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-sm font-medium leading-tight"
+                      style={{ color: lmsTokens.ink }}
+                    >
                       {assignment.title}
-                    </div>
-                    <div className="mt-0.5 text-xs" style={{ color: lmsTokens.slate }}>
+                    </p>
+                    <p
+                      className="mt-0.5 truncate text-xs leading-tight"
+                      style={{ color: lmsTokens.slate }}
+                    >
                       {assignment.course} · Due {assignment.due}
-                    </div>
+                    </p>
                   </div>
-                  <StatusBadge status={assignment.status} />
-                </div>
+                  <div className="shrink-0">
+                    <StatusBadge status={assignment.status} />
+                  </div>
+                </li>
               ))}
-            </div>
-          </section>
-
-          <section
-            className="rounded-lg border bg-white p-5"
-            style={{ borderColor: lmsTokens.line }}
-          >
-            <h2 className="mb-4 text-sm font-semibold" style={{ color: lmsTokens.ink }}>
-              Grade Summary
-            </h2>
-            <GradeSummaryChart data={gradeData} />
+            </ul>
           </section>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <section
-            className="rounded-lg p-5"
-            style={{
-              backgroundColor: lmsTokens.navy900,
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(198,154,62,0.09) 0px, rgba(198,154,62,0.09) 1px, transparent 1px, transparent 34px)",
-            }}
-          >
-            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-              <MegaphoneIcon size={15} color={lmsTokens.gold500} />
-              Announcements
-            </h2>
-            <div className="flex flex-col gap-4">
+        {/* Right sidebar — announcements + schedule */}
+        <aside className="space-y-6 xl:col-span-4">
+          <section className="lms-panel-card p-5 sm:p-6">
+            <DashboardPanelHead
+              title="Announcements"
+              icon={<MegaphoneIcon size={16} color={lmsTokens.gold500} />}
+              badge={
+                <span
+                  className="flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs font-bold"
+                  style={{
+                    backgroundColor: lmsTokens.gold500,
+                    color: lmsTokens.navy900,
+                  }}
+                >
+                  {studentAnnouncements.length}
+                </span>
+              }
+            />
+            <div className="space-y-3">
               {studentAnnouncements.map((announcement) => (
                 <div
                   key={`${announcement.from}-${announcement.time}`}
-                  className="border-b pb-4 last:border-b-0 last:pb-0"
-                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                  className="rounded-lg border border-nlsc-gold/20 bg-nlsc-gold/5 p-4"
                 >
-                  <div
-                    className="text-xs font-semibold"
-                    style={{ color: lmsTokens.gold500 }}
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-[0.14em]"
+                    style={{ color: lmsTokens.gold600 }}
                   >
                     {announcement.from}
-                  </div>
+                  </span>
                   <p
-                    className="mt-1 text-xs leading-relaxed"
-                    style={{ color: "rgba(255,255,255,0.75)" }}
+                    className="mt-2 text-sm leading-relaxed"
+                    style={{ color: lmsTokens.ink }}
                   >
                     {announcement.text}
                   </p>
-                  <div
-                    className="mt-1 text-[10px]"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
+                  <span
+                    className="mt-2 inline-block text-xs"
+                    style={{ color: lmsTokens.slate }}
                   >
                     {announcement.time}
-                  </div>
+                  </span>
                 </div>
               ))}
             </div>
           </section>
-
-          <section
-            className="rounded-lg border bg-white p-5"
-            style={{ borderColor: lmsTokens.line }}
-          >
-            <h2 className="mb-4 text-sm font-semibold" style={{ color: lmsTokens.ink }}>
-              This Week
-            </h2>
-            <div className="flex flex-col gap-3 text-sm">
-              {weekSchedule.map((item) => (
-                <div key={item} className="flex items-center gap-3">
-                  <ClockIcon size={14} color={lmsTokens.slate} />
-                  <span style={{ color: lmsTokens.ink }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </div>
+        </aside>
       </div>
+    </div>
+  );
+}
+
+function StudentMainContent({
+  active,
+  studentName,
+  studentId,
+  greeting,
+  onNavigate,
+}: {
+  active: string;
+  studentName: string;
+  studentId: string;
+  greeting: string;
+  onNavigate: (label: string) => void;
+}) {
+  switch (active) {
+    case "Dashboard":
+      return <StudentDashboardHome greeting={greeting} onNavigate={onNavigate} />;
+    case "My Courses":
+      return <StudentCoursesView />;
+    case "Assignments":
+      return <StudentAssignmentsView />;
+    case "Attendance":
+      return <StudentAttendanceView />;
+    case "Settings":
+      return (
+        <PortalSettingsView
+          userName={studentName}
+          userId={studentId}
+          roleLabel="Student"
+        />
+      );
+    default:
+      return <StudentDashboardHome greeting={greeting} onNavigate={onNavigate} />;
+  }
+}
+
+export default function StudentDashboardView({
+  studentName,
+  studentId,
+}: StudentDashboardViewProps) {
+  const router = useRouter();
+  const [active, setActive] = useState("Dashboard");
+  const greeting = getDashboardGreeting(studentName);
+
+  async function handleLogout() {
+    await fetch("/api/portal/logout", { method: "POST" });
+    router.push("/portal");
+    router.refresh();
+  }
+
+  return (
+    <PortalShell
+      userName={studentName}
+      userId={studentId}
+      roleLabel="Student"
+      searchPlaceholder="Search courses, assignments..."
+      navItems={navItems}
+      active={active}
+      onNavigate={setActive}
+      onLogout={handleLogout}
+    >
+      <StudentMainContent
+        active={active}
+        studentName={studentName}
+        studentId={studentId}
+        greeting={greeting}
+        onNavigate={setActive}
+      />
     </PortalShell>
   );
 }

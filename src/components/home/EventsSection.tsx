@@ -30,7 +30,7 @@ export default function EventsSection() {
       <div className="mx-auto max-w-6xl">
         <SectionHeader eyebrow="What's happening" title="Events" />
 
-        <div className="grid items-stretch gap-8 lg:grid-cols-5">
+        <div className="grid items-stretch gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
           <EventCard
             title={featuredEvent.title}
             description={featuredEvent.description}

@@ -1,0 +1,307 @@
+// NLSC Portal / LMS database schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  admin
+  instructor
+}
+
+enum UserStatus {
+  active
+  pending
+  suspended
+}
+
+enum CourseStatus {
+  active
+  draft
+  pending
+}
+
+enum ModuleType {
+  video
+  document
+  quiz
+}
+
+enum EnrollmentStatus {
+  active
+  pending
+  completed
+  withdrawn
+}
+
+enum AssignmentStatus {
+  pending
+  submitted
+  overdue
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
+
+enum AnnouncementAudience {
+  All
+  Students
+  Instructors
+  Staff
+}
+
+enum AnnouncementStatus {
+  published
+  draft
+  scheduled
+}
+
+enum ApprovalType {
+  Enrollment
+  Course
+  Staff
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ReportCategory {
+  enrollment
+  attendance
+  performance
+  financial
+}
+
+enum ReportFormat {
+  PDF
+  CSV
+  XLSX
+}
+
+model User {
+  id           String     @id
+  email        String     @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role
+  status       UserStatus @default(active)
+  department   String?
+  joinedAt     DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  notificationPrefs UserNotificationPrefs?
+  taughtCourses     Course[]               @relation("CourseInstructor")
+  enrollments       Enrollment[]
+  submissions       AssignmentSubmission[]
+  grades            Grade[]
+  attendance        AttendanceRecord[]
+  announcements     Announcement[]         @relation("AnnouncementAuthor")
+
+  @@index([role, status])
+}
+
+model UserNotificationPrefs {
+  userId        String  @id
+  emailAlerts   Boolean @default(true)
+  portalAlerts  Boolean @default(true)
+  weeklyDigest  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CampusSettings {
+  id                        Int     @id @default(1)
+  campusDisplayName         String  @default("Next Level Solutions Campus")
+  academicYear              String  @default("2026")
+  requireEnrollmentApproval Boolean @default(true)
+}
+
+model Course {
+  id           String       @id
+  code         String       @unique
+  title        String
+  description  String       @default("")
+  duration     String
+  status       CourseStatus @default(draft)
+  instructorId String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  instructor  User?             @relation("CourseInstructor", fields: [instructorId], references: [id])
+  modules     CourseModule[]
+  enrollments Enrollment[]
+  assignments Assignment[]
+  sessions    ClassSession[]
+  grades      Grade[]
+
+  @@index([status])
+}
+
+model CourseModule {
+  id        String     @id
+  courseId  String
+  title     String
+  duration  String
+  type      ModuleType
+  sortOrder Int        @default(0)
+
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress ModuleProgress[]
+
+  @@index([courseId])
+}
+
+model Enrollment {
+  id               String           @id @default(cuid())
+  studentId        String
+  courseId         String
+  status           EnrollmentStatus @default(pending)
+  progressPercent  Int              @default(0)
+  completedModules Int              @default(0)
+  nextSessionAt    String?
+  enrolledAt       DateTime         @default(now())
+
+  student        User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course         Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moduleProgress ModuleProgress[]
+
+  @@unique([studentId, courseId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model ModuleProgress {
+  id           String    @id @default(cuid())
+  enrollmentId String
+  moduleId     String
+  completedAt  DateTime?
+
+  enrollment Enrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  module     CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, moduleId])
+}
+
+model Assignment {
+  id        String   @id
+  courseId  String
+  title     String
+  type      String
+  dueAt     DateTime
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+
+  @@index([courseId])
+}
+
+model AssignmentSubmission {
+  id           String           @id @default(cuid())
+  assignmentId String
+  studentId    String
+  status       AssignmentStatus @default(pending)
+  submittedAt  DateTime?
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+}
+
+model Grade {
+  id        String   @id @default(cuid())
+  studentId String
+  courseId  String
+  grade     Float
+  period    String?
+  updatedAt DateTime @updatedAt
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+}
+
+model ClassSession {
+  id        String   @id @default(cuid())
+  courseId  String
+  title     String
+  startsAt  DateTime
+
+  course     Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  attendance AttendanceRecord[]
+
+  @@index([courseId, startsAt])
+}
+
+model AttendanceRecord {
+  id        String           @id @default(cuid())
+  studentId String
+  sessionId String
+  status    AttendanceStatus
+
+  student User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, sessionId])
+}
+
+model Announcement {
+  id        String                @id
+  title     String
+  body      String
+  audience  AnnouncementAudience  @default(All)
+  status    AnnouncementStatus    @default(draft)
+  authorId  String?
+  fromLabel String?
+  postedAt  DateTime?
+  createdAt DateTime              @default(now())
+
+  author User? @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+
+  @@index([status, postedAt])
+}
+
+model Approval {
+  id        String         @id @default(cuid())
+  title     String
+  type      ApprovalType
+  status    ApprovalStatus @default(pending)
+  createdAt DateTime       @default(now())
+}
+
+model Report {
+  id          String         @id
+  title       String
+  category    ReportCategory
+  period      String
+  generatedAt DateTime
+  format      ReportFormat
+  size        String
+  fileUrl     String?
+}
+
+model ContactInquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  createdAt DateTime @default(now())
+}

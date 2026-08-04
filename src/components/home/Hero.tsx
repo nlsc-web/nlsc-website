@@ -144,8 +144,8 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-nlsc-body-bg/88 via-transparent to-nlsc-beige/45 dark:from-nlsc-black/60 dark:via-transparent dark:to-nlsc-black/30" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(212,175,55,0.1),transparent_55%)] dark:bg-[radial-gradient(ellipse_at_30%_50%,rgba(212,175,55,0.08),transparent_50%)]" />
 
-      <div className="relative z-10 mx-auto flex min-h-[90vh] max-w-6xl items-center px-6 py-28 sm:px-8 sm:py-32">
-        <div className="max-w-2xl border-l border-nlsc-gold pl-8 sm:pl-10">
+      <div className="relative z-10 mx-auto flex min-h-[72vh] max-w-6xl items-center px-4 py-20 sm:min-h-[80vh] sm:px-6 sm:py-24 md:min-h-[85vh] md:px-8 md:py-28 lg:min-h-[90vh] lg:py-32">
+        <div className="max-w-2xl border-l border-nlsc-gold pl-5 sm:pl-8 md:pl-10">
           <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.22em] text-nlsc-gold-text">
             Next Level Solutions Campus
           </p>

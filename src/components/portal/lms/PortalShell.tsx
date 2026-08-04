@@ -1,16 +1,14 @@
 "use client";
 
 import {
-  BellIcon,
   CloseIcon,
   LogOutIcon,
   MenuIcon,
   SearchIcon,
-  SettingsIcon,
   type IconProps,
 } from "@/components/portal/lms/icons";
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import { getInitials } from "@/lib/portal/student-data";
 
@@ -29,8 +27,12 @@ type PortalShellProps = {
   navItems: PortalNavItem[];
   active: string;
   onNavigate: (label: string) => void;
-  onLogout: () => void;
+  onLogout: () => void | Promise<void>;
   children: ReactNode;
+  /** Lock main area to viewport height on desktop (dashboard overview). */
+  fitViewport?: boolean;
+  /** Show centered search in the header (desktop/tablet). */
+  showHeaderSearch?: boolean;
 };
 
 function NavItem({
@@ -62,6 +64,79 @@ function NavItem({
   );
 }
 
+function LogOutButton({
+  onClick,
+  loading,
+  variant = "sidebar",
+}: {
+  onClick: () => void;
+  loading: boolean;
+  variant?: "sidebar" | "header";
+}) {
+  if (variant === "header") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={loading}
+        title={loading ? "Signing out..." : "Log out"}
+        aria-label={loggingOutLabel(loading)}
+        className="flex shrink-0 items-center gap-3 rounded-md px-4 py-2.5 text-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+        style={{
+          background: `linear-gradient(to right, rgb(212 175 55 / 0.16), rgb(212 175 55 / 0.08)), ${lmsTokens.navy900}`,
+          color: lmsTokens.gold500,
+          fontWeight: 600,
+          borderLeft: `2px solid ${lmsTokens.gold500}`,
+        }}
+      >
+        <LogOutIcon size={17} color={lmsTokens.gold500} />
+        <span className="hidden sm:inline">
+          {loading ? "Signing out..." : "Log out"}
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="mt-2 flex w-full items-center justify-center gap-2.5 rounded-lg border border-nlsc-gold/45 bg-nlsc-gold/10 px-4 py-2.5 text-sm font-semibold text-nlsc-gold transition-all hover:border-nlsc-gold hover:bg-nlsc-gold/20 hover:text-[#f5edd4] disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <LogOutIcon size={16} color="currentColor" />
+      {loading ? "Signing out..." : "Log out"}
+    </button>
+  );
+}
+
+function loggingOutLabel(loading: boolean) {
+  return loading ? "Signing out" : "Log out";
+}
+
+function PortalHeaderSearch({
+  placeholder,
+  className = "",
+}: {
+  placeholder: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex w-full items-center gap-2.5 rounded-full border border-nlsc-gold/35 bg-white px-4 py-2.5 shadow-[0_1px_2px_rgb(10_10_10/0.04),0_4px_12px_rgb(212_175_55/0.08)] transition-all focus-within:border-nlsc-gold focus-within:shadow-[0_0_0_3px_rgb(212_175_55/0.14)] ${className}`}
+    >
+      <SearchIcon size={16} color={lmsTokens.gold600} />
+      <input
+        type="search"
+        placeholder={placeholder}
+        className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:font-normal placeholder:text-neutral-400"
+        style={{ color: lmsTokens.ink }}
+        aria-label={placeholder}
+      />
+    </div>
+  );
+}
+
 export default function PortalShell({
   userName,
   userId,
@@ -72,13 +147,37 @@ export default function PortalShell({
   onNavigate,
   onLogout,
   children,
+  fitViewport = false,
+  showHeaderSearch = true,
 }: PortalShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setMobileOpen(false);
+    try {
+      await onLogout();
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: lmsTokens.bg }}>
+    <div
+      className={`flex min-h-screen font-sans ${fitViewport ? "lg:h-dvh lg:min-h-0 lg:overflow-hidden" : ""}`}
+      style={{ backgroundColor: lmsTokens.bg }}
+    >
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col justify-between transition-transform duration-200 lg:static ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col justify-between transition-transform duration-200 lg:static ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${fitViewport ? "lg:h-full lg:min-h-0" : ""}`}
       >
         <div className="nlsc-brand-surface relative flex h-full flex-col justify-between">
           <div
@@ -87,52 +186,35 @@ export default function PortalShell({
           />
 
           <div>
-            <div className="flex items-center justify-between px-5 py-5">
-              <div className="flex items-center gap-3">
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-nlsc-gold/40 bg-black/30 p-0.5">
-                  <Image
-                    src="/nlsc-logo.png"
-                    alt="NLSC"
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-contain"
-                  />
-                </div>
-                <div>
-                  <span
-                    className="block text-base leading-tight text-white"
-                    style={{ fontFamily: "Georgia, serif" }}
-                  >
+            <div className="flex items-center gap-2 border-b border-white/8 px-4 py-4 sm:px-5">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Image
+                  src="/nlsc-logo.png"
+                  alt="NLSC"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 shrink-0 object-contain"
+                />
+                <div className="min-w-0">
+                  <span className="block text-sm font-semibold leading-tight text-white sm:text-base">
                     NLSC LMS
                   </span>
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-nlsc-gold/80">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-nlsc-gold/90">
                     {roleLabel === "Administrator" ? "Admin Portal" : "Student Portal"}
                   </span>
                 </div>
               </div>
               <button
                 type="button"
-                className="text-white/60 lg:hidden"
+                className="shrink-0 text-white/60 lg:hidden"
                 onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
               >
                 <CloseIcon size={20} />
               </button>
             </div>
 
-            <div className="px-5 pb-4">
-              <span
-                className="inline-block rounded border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                style={{
-                  borderColor: "rgb(212 175 55 / 0.35)",
-                  backgroundColor: "rgb(212 175 55 / 0.1)",
-                  color: lmsTokens.gold500,
-                }}
-              >
-                Colombo Campus · 2026
-              </span>
-            </div>
-
-            <nav className="mt-1 flex flex-col gap-0.5 px-3">
+            <nav className="flex flex-col gap-0.5 px-3 py-4">
               {navItems.map((item) => (
                 <NavItem
                   key={item.label}
@@ -149,23 +231,9 @@ export default function PortalShell({
           </div>
 
           <div className="px-3 pb-5">
-            <div
-              className="mb-3 h-px"
-              style={{ backgroundColor: "rgb(212 175 55 / 0.2)" }}
-            />
-            <NavItem
-              icon={SettingsIcon}
-              label="Settings"
-              active={false}
-              onClick={() => {}}
-            />
-            <NavItem
-              icon={LogOutIcon}
-              label="Log out"
-              active={false}
-              onClick={onLogout}
-            />
-            <p className="mt-4 px-4 text-[10px] text-white/35">ID: {userId}</p>
+            <p className="px-1 text-center text-[10px] text-white/35">
+              Signed in as <span className="font-mono text-white/50">{userId}</span>
+            </p>
           </div>
         </div>
       </aside>
@@ -179,9 +247,15 @@ export default function PortalShell({
         />
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div
+        className={`flex min-w-0 flex-1 flex-col ${fitViewport ? "lg:min-h-0 lg:overflow-hidden" : ""}`}
+      >
         <header
-          className="relative flex h-16 shrink-0 items-center justify-between border-b bg-white px-5 lg:px-8"
+          className={`relative grid shrink-0 items-center gap-3 border-b bg-white px-4 py-3 sm:px-5 lg:px-6 ${
+            showHeaderSearch
+              ? "grid-cols-[auto_1fr_auto] lg:h-[3.75rem]"
+              : "grid-cols-[auto_1fr] lg:flex lg:h-14 lg:justify-end lg:px-6"
+          }`}
           style={{ borderColor: lmsTokens.line }}
         >
           <div
@@ -189,41 +263,30 @@ export default function PortalShell({
             aria-hidden
           />
 
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex items-center">
             <button
               type="button"
               className="shrink-0 lg:hidden"
               onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
             >
               <MenuIcon size={20} color={lmsTokens.ink} />
             </button>
-            <div
-              className="hidden max-w-xl flex-1 items-center gap-2.5 rounded-md border px-3.5 py-2.5 sm:flex"
-              style={{
-                borderColor: lmsTokens.line,
-                backgroundColor: "#f5f5f5",
-              }}
-            >
-              <SearchIcon size={15} color={lmsTokens.slate} />
-              <input
-                placeholder={searchPlaceholder}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 focus:outline-none"
-                style={{ color: lmsTokens.ink }}
-              />
-            </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-4">
-            <button type="button" className="relative rounded-md p-1 transition-colors hover:bg-neutral-100">
-              <BellIcon size={19} color={lmsTokens.ink} />
-              <span
-                className="absolute right-0 top-0 h-2 w-2 rounded-full ring-2 ring-white"
-                style={{ backgroundColor: lmsTokens.bad }}
+          <div className="flex min-w-0 justify-center px-1 sm:px-3">
+            {showHeaderSearch && (
+              <PortalHeaderSearch
+                placeholder={searchPlaceholder}
+                className="hidden max-w-md md:flex lg:max-w-xl"
               />
-            </button>
-            <div className="flex items-center gap-2.5">
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
               <div
-                className="flex h-9 w-9 items-center justify-center rounded-full border text-xs font-semibold text-white"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold text-white sm:h-9 sm:w-9"
                 style={{
                   backgroundColor: lmsTokens.navy900,
                   borderColor: "rgb(212 175 55 / 0.4)",
@@ -231,22 +294,47 @@ export default function PortalShell({
               >
                 {getInitials(userName)}
               </div>
-              <div className="hidden leading-tight sm:block">
-                <div className="text-sm font-semibold" style={{ color: lmsTokens.ink }}>
+              <div className="hidden min-w-0 leading-tight md:block">
+                <div
+                  className="truncate text-sm font-semibold"
+                  style={{ color: lmsTokens.ink, maxWidth: "11rem" }}
+                >
                   {userName}
                 </div>
                 <div
-                  className="text-[11px] font-medium uppercase tracking-wide"
+                  className="text-[10px] font-bold uppercase tracking-[0.12em]"
                   style={{ color: lmsTokens.gold500 }}
                 >
                   {roleLabel}
                 </div>
               </div>
             </div>
+            <LogOutButton
+              variant="header"
+              onClick={handleLogout}
+              loading={loggingOut}
+            />
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-5 lg:p-8">{children}</main>
+        {showHeaderSearch && (
+          <div
+            className="border-b bg-white px-4 py-3 md:hidden"
+            style={{ borderColor: lmsTokens.line }}
+          >
+            <PortalHeaderSearch placeholder={searchPlaceholder} />
+          </div>
+        )}
+
+        <main
+          className={`flex-1 p-4 sm:p-5 lg:p-6 ${
+            fitViewport
+              ? "overflow-y-auto lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:p-5"
+              : "overflow-y-auto lg:p-8"
+          }`}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -254,7 +342,7 @@ export default function PortalShell({
 
 export function PortalBrandPanel() {
   return (
-    <div className="relative flex w-full flex-col justify-between overflow-hidden px-8 py-12 lg:w-[42%] lg:px-12 lg:py-16">
+    <div className="relative flex w-full shrink-0 flex-col justify-between overflow-hidden px-5 py-8 sm:px-8 sm:py-10 lg:w-[42%] lg:px-12 lg:py-16">
       <div className="nlsc-brand-surface absolute inset-0" aria-hidden />
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nlsc-gold/70 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgba(212,175,55,0.1),transparent_55%)]" />
@@ -265,32 +353,35 @@ export function PortalBrandPanel() {
           alt="Next Level Solutions Campus"
           width={56}
           height={56}
-          className="h-14 w-14 object-contain"
+          className="h-11 w-11 object-contain sm:h-14 sm:w-14"
           priority
         />
-        <span className="hidden max-w-[11rem] text-[11px] font-semibold uppercase leading-snug tracking-[0.14em] text-white/90 sm:block">
+        <span className="max-w-[11rem] text-[10px] font-semibold uppercase leading-snug tracking-[0.12em] text-white/90 sm:text-[11px] sm:tracking-[0.14em]">
           Next Level Solutions Campus
         </span>
       </div>
 
-      <div className="relative max-w-md border-l border-nlsc-gold pl-8">
-        <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em] text-nlsc-gold">
+      <div className="relative my-6 max-w-md border-l border-nlsc-gold pl-5 sm:my-0 sm:pl-8 lg:my-auto">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-nlsc-gold sm:mb-4 sm:text-[11px] sm:tracking-[0.22em]">
           Learning Management System
         </p>
-        <h1 className="text-3xl font-bold leading-tight tracking-tight text-white lg:text-4xl xl:text-[2.75rem]">
+        <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl xl:text-[2.75rem]">
           Build your accounting
-          <br />
-          career
-          <br />
+          <span className="hidden sm:inline">
+            <br />
+            career
+            <br />
+          </span>
+          <span className="sm:hidden"> career </span>
           <span className="text-nlsc-gold">with confidence.</span>
         </h1>
-        <p className="mt-5 text-sm leading-relaxed text-white/65 sm:text-base">
+        <p className="mt-4 hidden text-sm leading-relaxed text-white/65 md:block sm:text-base">
           Professional accounting programs, coursework, and progress — organized
           in one portal, from classroom learning to real career success.
         </p>
       </div>
 
-      <p className="relative text-xs text-white/40">
+      <p className="relative hidden text-xs text-white/40 sm:block">
         Next Level Solutions Campus · Colombo
       </p>
 

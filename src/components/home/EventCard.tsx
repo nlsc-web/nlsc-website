@@ -56,10 +56,10 @@ export default function EventCard({
   return (
     <article
       className={`nlsc-card-popup group relative flex h-full flex-col overflow-hidden rounded-lg border border-nlsc-border bg-nlsc-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${
-        featured ? "lg:col-span-3" : ""
+        featured ? "md:col-span-2 lg:col-span-3" : ""
       }`}
     >
-      <div className="relative min-h-[280px] flex-1 overflow-hidden bg-nlsc-card-placeholder lg:min-h-[360px]">
+      <div className="relative min-h-[220px] flex-1 overflow-hidden bg-nlsc-card-placeholder sm:min-h-[280px] lg:min-h-[360px]">
         {imageSrc ? (
           <Image
             src={imageSrc}
