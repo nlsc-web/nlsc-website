@@ -9,13 +9,12 @@ import EnrollmentTrendChart from "@/components/portal/lms/EnrollmentTrendChart";
 import ProgramLoadChart from "@/components/portal/lms/ProgramLoadChart";
 import StatCard from "@/components/portal/lms/StatCard";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
-import {
-  adminReports,
-  enrollmentTrend,
-  programLoad,
-  type AdminReport,
-  type ReportCategory,
-} from "@/lib/portal/admin-data";
+import type {
+  AdminReport,
+  EnrollmentTrendPoint,
+  ProgramLoadPoint,
+  ReportCategory,
+} from "@/lib/portal/types/admin-portal";
 import { useMemo, useState } from "react";
 
 type FilterKey = "all" | ReportCategory;
@@ -35,7 +34,17 @@ const filters: { key: FilterKey; label: string }[] = [
   { key: "financial", label: "Financial" },
 ];
 
-export default function AdminReportsView() {
+type AdminReportsViewProps = {
+  reports: AdminReport[];
+  enrollmentTrend: EnrollmentTrendPoint[];
+  programLoad: ProgramLoadPoint[];
+};
+
+export default function AdminReportsView({
+  reports: adminReports,
+  enrollmentTrend,
+  programLoad,
+}: AdminReportsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
@@ -49,7 +58,7 @@ export default function AdminReportsView() {
       performance: byCategory("performance"),
       financial: byCategory("financial"),
     };
-  }, []);
+  }, [adminReports]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -62,7 +71,7 @@ export default function AdminReportsView() {
         report.period.toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, adminReports]);
 
   return (
     <>

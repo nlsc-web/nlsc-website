@@ -10,7 +10,6 @@ import StatCard from "@/components/portal/lms/StatCard";
 import UserStatusBadge from "@/components/portal/lms/UserStatusBadge";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import {
-  adminInstructors,
   getInitials,
   type AdminInstructor,
 } from "@/lib/portal/admin-data";
@@ -25,32 +24,38 @@ const filters: { key: FilterKey; label: string }[] = [
   { key: "suspended", label: "Suspended" },
 ];
 
-export default function AdminInstructorsView() {
+type AdminInstructorsViewProps = {
+  instructors: AdminInstructor[];
+};
+
+export default function AdminInstructorsView({
+  instructors,
+}: AdminInstructorsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
   const counts = useMemo(
     () => ({
-      all: adminInstructors.length,
-      active: adminInstructors.filter((i) => i.status === "active").length,
-      pending: adminInstructors.filter((i) => i.status === "pending").length,
-      suspended: adminInstructors.filter((i) => i.status === "suspended").length,
+      all: instructors.length,
+      active: instructors.filter((i) => i.status === "active").length,
+      pending: instructors.filter((i) => i.status === "pending").length,
+      suspended: instructors.filter((i) => i.status === "suspended").length,
     }),
-    [],
+    [instructors],
   );
 
   const totalCourses = useMemo(
     () =>
-      adminInstructors.filter((i) => i.status === "active").reduce(
+      instructors.filter((i) => i.status === "active").reduce(
         (sum, i) => sum + i.courses.split("·").length,
         0,
       ),
-    [],
+    [instructors],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return adminInstructors.filter((instructor) => {
+    return instructors.filter((instructor) => {
       const matchesFilter = filter === "all" || instructor.status === filter;
       const matchesQuery =
         !q ||
@@ -61,7 +66,7 @@ export default function AdminInstructorsView() {
         instructor.email.toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, instructors]);
 
   return (
     <>
@@ -216,7 +221,7 @@ export default function AdminInstructorsView() {
           style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}
         >
           <span>
-            Showing {filtered.length} of {adminInstructors.length} instructors
+            Showing {filtered.length} of {instructors.length} instructors
           </span>
           <button
             type="button"

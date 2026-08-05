@@ -10,7 +10,6 @@ import StatCard from "@/components/portal/lms/StatCard";
 import UserStatusBadge from "@/components/portal/lms/UserStatusBadge";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import {
-  adminStudents,
   getInitials,
   type AdminStudent,
 } from "@/lib/portal/admin-data";
@@ -25,23 +24,27 @@ const filters: { key: FilterKey; label: string }[] = [
   { key: "suspended", label: "Suspended" },
 ];
 
-export default function AdminStudentsView() {
+type AdminStudentsViewProps = {
+  students: AdminStudent[];
+};
+
+export default function AdminStudentsView({ students }: AdminStudentsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
   const counts = useMemo(
     () => ({
-      all: adminStudents.length,
-      active: adminStudents.filter((s) => s.status === "active").length,
-      pending: adminStudents.filter((s) => s.status === "pending").length,
-      suspended: adminStudents.filter((s) => s.status === "suspended").length,
+      all: students.length,
+      active: students.filter((s) => s.status === "active").length,
+      pending: students.filter((s) => s.status === "pending").length,
+      suspended: students.filter((s) => s.status === "suspended").length,
     }),
-    [],
+    [students],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return adminStudents.filter((student) => {
+    return students.filter((student) => {
       const matchesFilter = filter === "all" || student.status === filter;
       const matchesQuery =
         !q ||
@@ -51,7 +54,7 @@ export default function AdminStudentsView() {
         student.email.toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, students]);
 
   return (
     <>
@@ -203,7 +206,7 @@ export default function AdminStudentsView() {
 
         <div className="mt-4 flex items-center justify-between border-t pt-4 text-xs" style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}>
           <span>
-            Showing {filtered.length} of {adminStudents.length} students
+            Showing {filtered.length} of {students.length} students
           </span>
           <button
             type="button"

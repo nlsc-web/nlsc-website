@@ -24,6 +24,9 @@ type PortalShellProps = {
   userId: string;
   roleLabel?: string;
   searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchResults?: ReactNode;
   navItems: PortalNavItem[];
   active: string;
   onNavigate: (label: string) => void;
@@ -117,22 +120,31 @@ function loggingOutLabel(loading: boolean) {
 function PortalHeaderSearch({
   placeholder,
   className = "",
+  value,
+  onChange,
+  results,
 }: {
   placeholder: string;
   className?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  results?: ReactNode;
 }) {
   return (
-    <div
-      className={`flex w-full items-center gap-2.5 rounded-full border border-nlsc-gold/35 bg-white px-4 py-2.5 shadow-[0_1px_2px_rgb(10_10_10/0.04),0_4px_12px_rgb(212_175_55/0.08)] transition-all focus-within:border-nlsc-gold focus-within:shadow-[0_0_0_3px_rgb(212_175_55/0.14)] ${className}`}
-    >
-      <SearchIcon size={16} color={lmsTokens.gold600} />
-      <input
-        type="search"
-        placeholder={placeholder}
-        className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:font-normal placeholder:text-neutral-400"
-        style={{ color: lmsTokens.ink }}
-        aria-label={placeholder}
-      />
+    <div className={`relative w-full ${className}`}>
+      <div className="flex w-full items-center gap-2.5 rounded-full border border-nlsc-gold/35 bg-white px-4 py-2.5 shadow-[0_1px_2px_rgb(10_10_10/0.04),0_4px_12px_rgb(212_175_55/0.08)] transition-all focus-within:border-nlsc-gold focus-within:shadow-[0_0_0_3px_rgb(212_175_55/0.14)]">
+        <SearchIcon size={16} color={lmsTokens.gold600} />
+        <input
+          type="search"
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange?.(event.target.value)}
+          className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:font-normal placeholder:text-neutral-400"
+          style={{ color: lmsTokens.ink }}
+          aria-label={placeholder}
+        />
+      </div>
+      {results}
     </div>
   );
 }
@@ -142,6 +154,9 @@ export default function PortalShell({
   userId,
   roleLabel = "Student",
   searchPlaceholder = "Search courses, assignments...",
+  searchValue,
+  onSearchChange,
+  searchResults,
   navItems,
   active,
   onNavigate,
@@ -279,6 +294,9 @@ export default function PortalShell({
               <PortalHeaderSearch
                 placeholder={searchPlaceholder}
                 className="hidden max-w-md md:flex lg:max-w-xl"
+                value={searchValue}
+                onChange={onSearchChange}
+                results={searchResults}
               />
             )}
           </div>
@@ -322,7 +340,12 @@ export default function PortalShell({
             className="border-b bg-white px-4 py-3 md:hidden"
             style={{ borderColor: lmsTokens.line }}
           >
-            <PortalHeaderSearch placeholder={searchPlaceholder} />
+            <PortalHeaderSearch
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={onSearchChange}
+              results={searchResults}
+            />
           </div>
         )}
 

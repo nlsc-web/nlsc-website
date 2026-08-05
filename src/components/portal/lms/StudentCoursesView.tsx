@@ -6,25 +6,32 @@ import StatCard from "@/components/portal/lms/StatCard";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
-import { studentCourses } from "@/lib/portal/student-data";
+import type { StudentCourse } from "@/lib/portal/types/student-portal";
 
-export default function StudentCoursesView() {
+type StudentCoursesViewProps = {
+  courses: StudentCourse[];
+};
+
+export default function StudentCoursesView({ courses }: StudentCoursesViewProps) {
   const [query, setQuery] = useState("");
 
-  const avgProgress = Math.round(
-    studentCourses.reduce((sum, c) => sum + c.progress, 0) / studentCourses.length,
-  );
+  const avgProgress =
+    courses.length > 0
+      ? Math.round(
+          courses.reduce((sum, c) => sum + c.progress, 0) / courses.length,
+        )
+      : 0;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return studentCourses;
-    return studentCourses.filter(
+    if (!q) return courses;
+    return courses.filter(
       (course) =>
         course.name.toLowerCase().includes(q) ||
         course.code.toLowerCase().includes(q) ||
         course.instructor.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, courses]);
 
   return (
     <div className="mx-auto w-full max-w-[1400px]">
@@ -54,7 +61,7 @@ export default function StudentCoursesView() {
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Enrolled Courses"
-          value={String(studentCourses.length)}
+          value={String(courses.length)}
           sub="Active programs"
           accent={lmsTokens.gold500}
           subPill
@@ -68,9 +75,7 @@ export default function StudentCoursesView() {
         />
         <StatCard
           label="Modules Completed"
-          value={String(
-            studentCourses.reduce((sum, c) => sum + c.completedModules, 0),
-          )}
+          value={String(courses.reduce((sum, c) => sum + c.completedModules, 0))}
           sub="Keep going!"
           accent={lmsTokens.good}
           subPill
@@ -153,7 +158,8 @@ export default function StudentCoursesView() {
                 </div>
                 <div className="mt-auto flex items-center justify-between text-xs">
                   <span style={{ color: lmsTokens.slate }}>
-                    {course.completedModules}/{course.modules} modules · Next: {course.nextSession}
+                    {course.completedModules}/{course.modules} modules · Next:{" "}
+                    {course.nextSession ?? "TBA"}
                   </span>
                   <span
                     className="flex items-center gap-0.5 font-semibold transition-opacity group-hover:opacity-80"

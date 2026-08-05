@@ -8,7 +8,6 @@ import {
 import StatCard from "@/components/portal/lms/StatCard";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import {
-  adminCourses,
   type AdminCourse,
   type CourseStatus,
 } from "@/lib/portal/admin-data";
@@ -44,7 +43,11 @@ function CourseStatusBadge({ status }: { status: CourseStatus }) {
   );
 }
 
-export default function AdminCoursesView() {
+export default function AdminCoursesView({
+  courses: adminCourses,
+}: {
+  courses: AdminCourse[];
+}) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
@@ -55,12 +58,12 @@ export default function AdminCoursesView() {
       draft: adminCourses.filter((c) => c.status === "draft").length,
       pending: adminCourses.filter((c) => c.status === "pending").length,
     }),
-    [],
+    [adminCourses],
   );
 
   const totalEnrolled = useMemo(
     () => adminCourses.reduce((sum, c) => sum + c.enrolled, 0),
-    [],
+    [adminCourses],
   );
 
   const filtered = useMemo(() => {
@@ -74,7 +77,7 @@ export default function AdminCoursesView() {
         course.instructor.toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, adminCourses]);
 
   return (
     <>

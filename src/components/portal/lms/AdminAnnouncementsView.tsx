@@ -8,7 +8,6 @@ import {
 import StatCard from "@/components/portal/lms/StatCard";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import {
-  adminAnnouncements,
   type AdminAnnouncement,
   type AnnouncementStatus,
 } from "@/lib/portal/admin-data";
@@ -44,7 +43,13 @@ function AnnouncementStatusBadge({ status }: { status: AnnouncementStatus }) {
   );
 }
 
-export default function AdminAnnouncementsView() {
+type AdminAnnouncementsViewProps = {
+  announcements: AdminAnnouncement[];
+};
+
+export default function AdminAnnouncementsView({
+  announcements: adminAnnouncements,
+}: AdminAnnouncementsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
@@ -55,7 +60,7 @@ export default function AdminAnnouncementsView() {
       scheduled: adminAnnouncements.filter((a) => a.status === "scheduled").length,
       draft: adminAnnouncements.filter((a) => a.status === "draft").length,
     }),
-    [],
+    [adminAnnouncements],
   );
 
   const filtered = useMemo(() => {
@@ -70,7 +75,7 @@ export default function AdminAnnouncementsView() {
         item.author.toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, adminAnnouncements]);
 
   return (
     <>

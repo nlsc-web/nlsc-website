@@ -21,16 +21,13 @@ import StudentAssignmentsView from "@/components/portal/lms/StudentAssignmentsVi
 import StudentAttendanceView from "@/components/portal/lms/StudentAttendanceView";
 import StudentCoursesView from "@/components/portal/lms/StudentCoursesView";
 import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
-import {
-  getDashboardGreeting,
-  studentAnnouncements,
-  studentAssignments,
-  studentCourses,
-} from "@/lib/portal/student-data";
+import { getDashboardGreeting } from "@/lib/portal/student-data";
+import type { StudentPortalData } from "@/lib/portal/types/student-portal";
 
 type StudentDashboardViewProps = {
   studentName: string;
   studentId: string;
+  portalData: StudentPortalData;
 };
 
 const navItems = [
@@ -43,19 +40,28 @@ const navItems = [
 
 function StudentDashboardHome({
   greeting,
+  portalData,
   onNavigate,
 }: {
   greeting: string;
+  portalData: StudentPortalData;
   onNavigate: (label: string) => void;
 }) {
-  const pendingCount = studentAssignments.filter(
+  const { courses, assignments, announcements, attendance } = portalData;
+
+  const pendingCount = assignments.filter(
     (item) => item.status === "pending",
   ).length;
 
-  const sortedAssignments = [...studentAssignments].sort((a, b) => {
+  const sortedAssignments = [...assignments].sort((a, b) => {
     const order = { pending: 0, overdue: 1, submitted: 2 };
     return order[a.status] - order[b.status];
   });
+
+  const attendanceSub =
+    attendance.summary.overall >= attendance.summary.required
+      ? `Above required ${attendance.summary.required}%`
+      : `Required ${attendance.summary.required}%`;
 
   return (
     <div className="mx-auto w-full max-w-[1400px]">
@@ -107,7 +113,7 @@ function StudentDashboardHome({
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           label="Enrolled Courses"
-          value={String(studentCourses.length)}
+          value={String(courses.length)}
           sub="Active programs"
           accent={lmsTokens.gold500}
           subPill
@@ -121,8 +127,8 @@ function StudentDashboardHome({
         />
         <StatCard
           label="Attendance"
-          value="92%"
-          sub="Above required 80%"
+          value={`${attendance.summary.overall}%`}
+          sub={attendanceSub}
           accent={lmsTokens.good}
           subPill
         />
@@ -148,7 +154,7 @@ function StudentDashboardHome({
               }
             />
             <div className="grid gap-3 sm:grid-cols-2">
-              {studentCourses.map((course) => (
+              {courses.map((course) => (
                 <Link
                   key={course.id}
                   href={`/portal/dashboard/courses/${course.id}`}
@@ -269,12 +275,12 @@ function StudentDashboardHome({
                     color: lmsTokens.navy900,
                   }}
                 >
-                  {studentAnnouncements.length}
+                  {announcements.length}
                 </span>
               }
             />
             <div className="space-y-3">
-              {studentAnnouncements.map((announcement) => (
+              {announcements.map((announcement) => (
                 <div
                   key={`${announcement.from}-${announcement.time}`}
                   className="rounded-lg border border-nlsc-gold/20 bg-nlsc-gold/5 p-4"
@@ -312,23 +318,31 @@ function StudentMainContent({
   studentName,
   studentId,
   greeting,
+  portalData,
   onNavigate,
 }: {
   active: string;
   studentName: string;
   studentId: string;
   greeting: string;
+  portalData: StudentPortalData;
   onNavigate: (label: string) => void;
 }) {
   switch (active) {
     case "Dashboard":
-      return <StudentDashboardHome greeting={greeting} onNavigate={onNavigate} />;
+      return (
+        <StudentDashboardHome
+          greeting={greeting}
+          portalData={portalData}
+          onNavigate={onNavigate}
+        />
+      );
     case "My Courses":
-      return <StudentCoursesView />;
+      return <StudentCoursesView courses={portalData.courses} />;
     case "Assignments":
-      return <StudentAssignmentsView />;
+      return <StudentAssignmentsView assignments={portalData.assignments} />;
     case "Attendance":
-      return <StudentAttendanceView />;
+      return <StudentAttendanceView attendance={portalData.attendance} />;
     case "Settings":
       return (
         <PortalSettingsView
@@ -338,13 +352,20 @@ function StudentMainContent({
         />
       );
     default:
-      return <StudentDashboardHome greeting={greeting} onNavigate={onNavigate} />;
+      return (
+        <StudentDashboardHome
+          greeting={greeting}
+          portalData={portalData}
+          onNavigate={onNavigate}
+        />
+      );
   }
 }
 
 export default function StudentDashboardView({
   studentName,
   studentId,
+  portalData,
 }: StudentDashboardViewProps) {
   const router = useRouter();
   const [active, setActive] = useState("Dashboard");
@@ -372,6 +393,7 @@ export default function StudentDashboardView({
         studentName={studentName}
         studentId={studentId}
         greeting={greeting}
+        portalData={portalData}
         onNavigate={setActive}
       />
     </PortalShell>

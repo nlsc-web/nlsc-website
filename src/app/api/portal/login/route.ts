@@ -1,4 +1,6 @@
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 import {
   createPortalSessionToken,
   portalSessionCookieOptions,
@@ -12,7 +14,7 @@ type LoginBody = {
   role?: PortalRole;
 };
 
-function getStudentCredentials() {
+function getStudentEnvCredentials() {
   return {
     studentId: process.env.PORTAL_DEMO_STUDENT_ID ?? "NLSC2026",
     password: process.env.PORTAL_DEMO_PASSWORD ?? "nlsc@student",
@@ -20,12 +22,64 @@ function getStudentCredentials() {
   };
 }
 
-function getAdminCredentials() {
+function getAdminEnvCredentials() {
   return {
     adminId: process.env.PORTAL_DEMO_ADMIN_ID ?? "NLSC-ADMIN",
     password: process.env.PORTAL_DEMO_ADMIN_PASSWORD ?? "nlsc@admin",
     name: process.env.PORTAL_DEMO_ADMIN_NAME ?? "NLSC Administrator",
   };
+}
+
+async function authenticateFromDatabase(
+  userId: string,
+  password: string,
+  role: PortalRole,
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== role || user.status === "suspended") {
+    return null;
+  }
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) return null;
+
+  return { id: user.id, name: user.name, role };
+}
+
+async function authenticateUser(
+  userId: string,
+  password: string,
+  role: PortalRole,
+) {
+  try {
+    const dbUser = await authenticateFromDatabase(userId, password, role);
+    if (dbUser) return dbUser;
+  } catch {
+    // Database unavailable — fall through to env credentials
+  }
+
+  if (role === "admin") {
+    const credentials = getAdminEnvCredentials();
+    if (userId === credentials.adminId && password === credentials.password) {
+      return {
+        id: credentials.adminId,
+        name: credentials.name,
+        role: "admin" as const,
+      };
+    }
+    return null;
+  }
+
+  const credentials = getStudentEnvCredentials();
+  if (userId === credentials.studentId && password === credentials.password) {
+    return {
+      id: credentials.studentId,
+      name: credentials.name,
+      role: "student" as const,
+    };
+  }
+
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -37,54 +91,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const studentId = body.studentId?.trim();
+  const userId = body.studentId?.trim();
   const password = body.password?.trim();
   const role: PortalRole = body.role === "admin" ? "admin" : "student";
 
-  if (!studentId || !password) {
+  if (!userId || !password) {
     return NextResponse.json(
       { error: "User ID and password are required." },
       { status: 400 },
     );
   }
 
-  if (role === "admin") {
-    const credentials = getAdminCredentials();
+  const user = await authenticateUser(userId, password, role);
 
-    if (studentId !== credentials.adminId || password !== credentials.password) {
-      return NextResponse.json(
-        { error: "Invalid admin ID or password." },
-        { status: 401 },
-      );
-    }
-
-    const token = await createPortalSessionToken({
-      studentId: credentials.adminId,
-      name: credentials.name,
-      role: "admin",
-    });
-
-    const response = NextResponse.json({ success: true, role: "admin" });
-    response.cookies.set(PORTAL_SESSION_COOKIE, token, portalSessionCookieOptions);
-    return response;
-  }
-
-  const credentials = getStudentCredentials();
-
-  if (studentId !== credentials.studentId || password !== credentials.password) {
+  if (!user) {
     return NextResponse.json(
-      { error: "Invalid student ID or password." },
+      {
+        error:
+          role === "admin"
+            ? "Invalid admin ID or password."
+            : "Invalid student ID or password.",
+      },
       { status: 401 },
     );
   }
 
   const token = await createPortalSessionToken({
-    studentId: credentials.studentId,
-    name: credentials.name,
-    role: "student",
+    studentId: user.id,
+    name: user.name,
+    role: user.role,
   });
 
-  const response = NextResponse.json({ success: true, role: "student" });
+  const response = NextResponse.json({ success: true, role: user.role });
   response.cookies.set(PORTAL_SESSION_COOKIE, token, portalSessionCookieOptions);
   return response;
 }

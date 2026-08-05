@@ -6,10 +6,10 @@ import StatCard from "@/components/portal/lms/StatCard";
 import StatusBadge from "@/components/portal/lms/StatusBadge";
 import { useMemo, useState } from "react";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
-import {
-  studentAssignments,
-  type AssignmentStatus,
-} from "@/lib/portal/student-data";
+import type {
+  AssignmentStatus,
+  StudentAssignment,
+} from "@/lib/portal/types/student-portal";
 
 type FilterKey = "all" | AssignmentStatus;
 
@@ -20,23 +20,29 @@ const filters: { key: FilterKey; label: string }[] = [
   { key: "overdue", label: "Overdue" },
 ];
 
-export default function StudentAssignmentsView() {
+type StudentAssignmentsViewProps = {
+  assignments: StudentAssignment[];
+};
+
+export default function StudentAssignmentsView({
+  assignments,
+}: StudentAssignmentsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
   const counts = useMemo(
     () => ({
-      all: studentAssignments.length,
-      pending: studentAssignments.filter((a) => a.status === "pending").length,
-      submitted: studentAssignments.filter((a) => a.status === "submitted").length,
-      overdue: studentAssignments.filter((a) => a.status === "overdue").length,
+      all: assignments.length,
+      pending: assignments.filter((a) => a.status === "pending").length,
+      submitted: assignments.filter((a) => a.status === "submitted").length,
+      overdue: assignments.filter((a) => a.status === "overdue").length,
     }),
-    [],
+    [assignments],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return studentAssignments.filter((assignment) => {
+    return assignments.filter((assignment) => {
       const matchesFilter = filter === "all" || assignment.status === filter;
       const matchesQuery =
         !q ||
@@ -45,7 +51,7 @@ export default function StudentAssignmentsView() {
         assignment.type.toLowerCase().includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, query, assignments]);
 
   return (
     <div className="mx-auto w-full max-w-[1400px]">
@@ -241,7 +247,7 @@ export default function StudentAssignmentsView() {
           style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}
         >
           <span>
-            Showing {filtered.length} of {studentAssignments.length} assignments
+            Showing {filtered.length} of {assignments.length} assignments
           </span>
         </div>
       </section>

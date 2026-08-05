@@ -5,11 +5,10 @@ import DashboardPanelHead from "@/components/portal/lms/DashboardPanelHead";
 import StatCard from "@/components/portal/lms/StatCard";
 import { useMemo, useState } from "react";
 import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
-import {
-  studentAttendanceRecords,
-  studentAttendanceSummary,
-  type AttendanceStatus,
-} from "@/lib/portal/student-data";
+import type {
+  AttendanceStatus,
+  StudentPortalData,
+} from "@/lib/portal/types/student-portal";
 
 type FilterKey = "all" | AttendanceStatus;
 
@@ -42,27 +41,33 @@ function AttendanceBadge({ status }: { status: AttendanceStatus }) {
   );
 }
 
-export default function StudentAttendanceView() {
+type StudentAttendanceViewProps = {
+  attendance: StudentPortalData["attendance"];
+};
+
+export default function StudentAttendanceView({
+  attendance,
+}: StudentAttendanceViewProps) {
+  const { summary, records } = attendance;
   const [filter, setFilter] = useState<FilterKey>("all");
 
   const counts = useMemo(
     () => ({
-      all: studentAttendanceRecords.length,
-      present: studentAttendanceRecords.filter((r) => r.status === "present").length,
-      late: studentAttendanceRecords.filter((r) => r.status === "late").length,
-      absent: studentAttendanceRecords.filter((r) => r.status === "absent").length,
-      excused: studentAttendanceRecords.filter((r) => r.status === "excused").length,
+      all: records.length,
+      present: records.filter((r) => r.status === "present").length,
+      late: records.filter((r) => r.status === "late").length,
+      absent: records.filter((r) => r.status === "absent").length,
+      excused: records.filter((r) => r.status === "excused").length,
     }),
-    [],
+    [records],
   );
 
   const filtered = useMemo(() => {
-    if (filter === "all") return studentAttendanceRecords;
-    return studentAttendanceRecords.filter((r) => r.status === filter);
-  }, [filter]);
+    if (filter === "all") return records;
+    return records.filter((r) => r.status === filter);
+  }, [filter, records]);
 
-  const { overall, required, present, absent, late, totalSessions } =
-    studentAttendanceSummary;
+  const { overall, required, present, absent, late, totalSessions } = summary;
 
   return (
     <div className="mx-auto w-full max-w-[1400px]">

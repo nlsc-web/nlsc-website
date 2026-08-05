@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getPortalCourse } from "@/lib/portal/courses";
+import { getStudentCourseDetail } from "@/lib/portal/services/student-portal";
 import { getPortalSession } from "@/lib/portal/session";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 
@@ -18,8 +18,12 @@ const moduleTypeLabels = {
 export async function generateMetadata({
   params,
 }: CoursePageProps): Promise<Metadata> {
+  const session = await getPortalSession();
   const { courseId } = await params;
-  const course = getPortalCourse(courseId);
+  const course =
+    session && session.role === "student"
+      ? await getStudentCourseDetail(session.studentId, courseId)
+      : null;
 
   return {
     title: course
@@ -31,9 +35,10 @@ export async function generateMetadata({
 export default async function PortalCoursePage({ params }: CoursePageProps) {
   const session = await getPortalSession();
   if (!session) redirect("/portal");
+  if (session.role === "admin") redirect("/portal/admin/dashboard");
 
   const { courseId } = await params;
-  const course = getPortalCourse(courseId);
+  const course = await getStudentCourseDetail(session.studentId, courseId);
   if (!course) notFound();
 
   return (
@@ -82,7 +87,7 @@ export default async function PortalCoursePage({ params }: CoursePageProps) {
           </div>
           <div
             className="h-2 overflow-hidden rounded-full"
-            style={{ backgroundColor: "#EDEFF3" }}
+            style={{ backgroundColor: lmsTokens.gold100 }}
           >
             <div
               className="h-full rounded-full"
