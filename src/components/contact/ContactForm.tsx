@@ -6,7 +6,7 @@ import { type FormEvent, useState } from "react";
 const inputClassName =
   "w-full rounded-lg border border-nlsc-border bg-nlsc-surface px-4 py-3 text-sm text-nlsc-text outline-none transition-colors focus:border-nlsc-gold focus:ring-1 focus:ring-nlsc-gold/30";
 
-const CONTACT_EMAIL = "nextlevelsolutionscampus@gmail.com";
+const CONTACT_EMAIL = "nextlevelsolutionscampus.com";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 
@@ -19,7 +19,8 @@ export default function ContactForm() {
     setStatus("loading");
     setErrorMessage("");
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = {
       name: String(formData.get("name") ?? ""),
       email: String(formData.get("email") ?? ""),
@@ -41,7 +42,7 @@ export default function ContactForm() {
       }
 
       setStatus("success");
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       setStatus("error");
       setErrorMessage(

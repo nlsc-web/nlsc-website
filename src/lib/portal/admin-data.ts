@@ -1,5 +1,6 @@
 export type {
   AdminAnnouncement,
+  AdminContactInquiry,
   AdminCourse,
   AdminInstructor,
   AdminReport,

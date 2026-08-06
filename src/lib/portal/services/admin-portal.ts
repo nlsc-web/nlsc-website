@@ -2,6 +2,7 @@ import type { ApprovalType, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type {
   AdminAnnouncement,
+  AdminContactInquiry,
   AdminCourse,
   AdminDashboardData,
   AdminInstructor,
@@ -171,6 +172,7 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
     attendanceRows,
     enrollmentRows,
     recentUserRows,
+    inquiryRows,
   ] = await Promise.all([
     prisma.campusSettings.findFirst(),
     prisma.user.findMany({
@@ -209,6 +211,7 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
       orderBy: { joinedAt: "desc" },
       take: 8,
     }),
+    prisma.contactInquiry.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
   const enrollmentByStudent = new Map<string, string>();
@@ -343,6 +346,16 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
     author: item.fromLabel ?? "NLSC Admin",
   }));
 
+  const inquiries: AdminContactInquiry[] = inquiryRows.map((item) => ({
+    id: item.id,
+    name: item.name,
+    email: item.email,
+    subject: item.subject ?? "General inquiry",
+    message: item.message,
+    createdAt: formatPostedDate(item.createdAt),
+    receivedAt: item.createdAt.toISOString(),
+  }));
+
   return {
     campus: {
       name: campusSettings?.campusDisplayName ?? "Next Level Solutions Campus",
@@ -354,5 +367,6 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
     courses,
     reports,
     announcements,
+    inquiries,
   };
 }

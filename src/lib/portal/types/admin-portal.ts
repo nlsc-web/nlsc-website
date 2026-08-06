@@ -107,6 +107,16 @@ export type AdminCourse = {
   updated: string;
 };
 
+export type AdminContactInquiry = {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  createdAt: string;
+  receivedAt: string;
+};
+
 export type AdminPortalData = {
   campus: {
     name: string;
@@ -118,4 +128,5 @@ export type AdminPortalData = {
   courses: AdminCourse[];
   reports: AdminReport[];
   announcements: AdminAnnouncement[];
+  inquiries: AdminContactInquiry[];
 };

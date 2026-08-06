@@ -11,6 +11,7 @@ import {
   FolderKanbanIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
+  MailIcon,
   MegaphoneIcon,
   MoreHorizontalIcon,
   SettingsIcon,
@@ -21,6 +22,7 @@ import {
 } from "@/components/portal/lms/icons";
 import AdminAnnouncementsView from "@/components/portal/lms/AdminAnnouncementsView";
 import AdminCoursesView from "@/components/portal/lms/AdminCoursesView";
+import AdminInquiriesView from "@/components/portal/lms/AdminInquiriesView";
 import AdminInstructorsView from "@/components/portal/lms/AdminInstructorsView";
 import PortalSettingsView from "@/components/portal/lms/PortalSettingsView";
 import AdminReportsView from "@/components/portal/lms/AdminReportsView";
@@ -56,6 +58,7 @@ const navItems = [
   { icon: GraduationCapIcon, label: "Students" },
   { icon: UsersIcon, label: "Instructors" },
   { icon: FolderKanbanIcon, label: "Courses" },
+  { icon: MailIcon, label: "Messages" },
   { icon: BarChartIcon, label: "Reports" },
   { icon: MegaphoneIcon, label: "Announcements" },
   { icon: SettingsIcon, label: "Settings" },
@@ -528,6 +531,8 @@ function AdminMainContent({
       return <AdminInstructorsView instructors={portalData.instructors} />;
     case "Courses":
       return <AdminCoursesView courses={portalData.courses} />;
+    case "Messages":
+      return <AdminInquiriesView inquiries={portalData.inquiries} />;
     case "Reports":
       return (
         <AdminReportsView

@@ -157,10 +157,10 @@ export default function PortalLoginForm() {
               <p className="mt-10 border-t border-nlsc-border pt-6 text-center text-xs leading-relaxed text-nlsc-muted">
                 Need access? Contact{" "}
                 <a
-                  href="mailto:nextlevelsolutionscampus@gmail.com"
+                  href="mailto:nextlevelsolutionscampus.com"
                   className="font-semibold text-nlsc-gold-text transition-colors hover:underline"
                 >
-                  nextlevelsolutionscampus@gmail.com
+                  nextlevelsolutionscampus.com
                 </a>
               </p>
             </>

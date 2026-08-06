@@ -1,75 +1,63 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import CoursesDetailCard from "@/components/courses/CoursesDetailCard";
 import SectionHeader from "@/components/SectionHeader";
-import CourseCard from "@/components/home/CourseCard";
+import { popularCourses } from "@/lib/courses/popular-courses";
 
 export const metadata: Metadata = {
   title: "Courses | Next Level Solutions Campus",
   description:
-    "Explore Industry-focused Courses at NLSC Colombo — Software Engineering, Digital Marketing, Business Management, and more.",
+    "Explore NLSC accounting programmes — 20 Days Theory and 4 Days Fast Track Practical Accounting in Colombo.",
 };
-
-const courses = [
-  {
-    title: "Software Engineering",
-    description:
-      "Master full-stack development with React, Node.js, and cloud deployment. 12-month program with internship placement.",
-  },
-  {
-    title: "Digital Marketing",
-    description:
-      "Learn SEO, social media strategy, content marketing, and analytics. Includes Google and Meta certifications.",
-  },
-  {
-    title: "Business Management",
-    description:
-      "Cover leadership, finance, entrepreneurship, and project management. Ideal for aspiring managers and founders.",
-  },
-  {
-    title: "Data Analytics",
-    description:
-      "Build skills in Python, SQL, data visualization, and machine learning fundamentals for data-driven roles.",
-  },
-  {
-    title: "Graphic Design",
-    description:
-      "Develop creative skills in branding, UI/UX, and Adobe Creative Suite. Portfolio-focused curriculum.",
-  },
-  {
-    title: "Cybersecurity",
-    description:
-      "Understand network security, ethical hacking, and compliance. Prepare for industry security certifications.",
-  },
-];
 
 export default function CoursesPage() {
   return (
     <main>
-      <section className="border-b border-nlsc-border bg-nlsc-beige px-6 py-20 text-center dark:border-transparent">
-        <div className="mx-auto max-w-3xl">
-          <p className="mb-4 text-xs font-bold uppercase tracking-widest text-nlsc-gold-text">
+      <section className="relative overflow-hidden border-b border-nlsc-border px-6 py-24 sm:py-28">
+        <div className="absolute inset-0" aria-hidden>
+          <Image
+            src="/courses-hero-bg.png"
+            alt=""
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
+          />
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 bg-nlsc-beige/25 dark:bg-nlsc-black/40" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-nlsc-beige/20 via-nlsc-beige/30 to-nlsc-beige/50 dark:from-nlsc-black/30 dark:via-nlsc-black/45 dark:to-nlsc-black/65" />
+
+        <div className="relative z-10 mx-auto max-w-3xl text-center">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-nlsc-gold-text drop-shadow-md">
             Our Programs
           </p>
-          <h1 className="mb-5 text-3xl font-bold tracking-tight text-nlsc-text sm:text-4xl">
+          <h1 className="mb-5 text-3xl font-bold tracking-tight text-nlsc-text drop-shadow-md dark:text-white sm:text-4xl">
             Courses Designed for Your Career
           </h1>
-          <p className="text-base text-nlsc-muted sm:text-lg">
+          <p className="mx-auto max-w-xl text-base leading-relaxed text-nlsc-text drop-shadow-md dark:text-white/90 sm:text-lg">
             Choose from a range of Industry-aligned Programs, each Developed
             with input from leading Employers in Colombo and Beyond.
           </p>
         </div>
+
+        <div className="absolute bottom-0 left-0 right-0 z-10 h-px bg-gradient-to-r from-nlsc-gold/0 via-nlsc-gold/40 to-nlsc-gold/0" />
       </section>
 
       <section className="bg-nlsc-surface px-6 py-20">
         <div className="mx-auto max-w-6xl">
           <SectionHeader eyebrow="All Programs" title="Available Courses" />
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
-              <CourseCard
-                key={course.title}
-                title={course.title}
-                description={course.description}
-              />
-            ))}
+          <div className="space-y-6 md:space-y-8">
+            {popularCourses.map(
+              (course) =>
+                course.coursesPageContent && (
+                  <CoursesDetailCard
+                    key={course.title}
+                    title={course.title}
+                    content={course.coursesPageContent}
+                  />
+                ),
+            )}
           </div>
         </div>
       </section>
