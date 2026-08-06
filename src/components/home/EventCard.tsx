@@ -6,6 +6,7 @@ type EventCardProps = {
   date?: string;
   month?: string;
   day?: string;
+  dateText?: string;
   imageSrc?: string;
   imageAlt?: string;
   featured?: boolean;
@@ -18,6 +19,7 @@ export default function EventCard({
   date,
   month,
   day,
+  dateText,
   imageSrc,
   imageAlt,
   featured = false,
@@ -26,17 +28,29 @@ export default function EventCard({
   if (compact) {
     return (
       <article className="nlsc-card-popup group flex gap-5 rounded-lg border border-nlsc-border bg-nlsc-surface p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6">
-        {(month || day) && (
+        {(dateText || month || day) && (
           <div className="flex min-w-[4.5rem] flex-col items-center justify-center rounded-lg bg-nlsc-black px-3 py-4 text-center">
-            {month && (
-              <span className="text-xs font-bold uppercase tracking-wider text-nlsc-gold">
-                {month}
+            {dateText ? (
+              <span className="text-[10px] font-semibold leading-snug text-white sm:text-[11px]">
+                {dateText}
               </span>
-            )}
-            {day && (
-              <span className="mt-0.5 text-2xl font-bold leading-none text-white">
-                {day}
-              </span>
+            ) : (
+              <>
+                {month && (
+                  <span className="text-xs font-bold uppercase tracking-wider text-nlsc-gold">
+                    {month}
+                  </span>
+                )}
+                {day && (
+                  <span
+                    className={`mt-0.5 font-bold leading-none text-white ${
+                      day.includes("-") ? "text-xl" : "text-2xl"
+                    }`}
+                  >
+                    {day}
+                  </span>
+                )}
+              </>
             )}
           </div>
         )}

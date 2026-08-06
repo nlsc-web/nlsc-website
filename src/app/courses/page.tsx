@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import CoursesDetailCard from "@/components/courses/CoursesDetailCard";
+import CoursesFeesSection from "@/components/courses/CoursesFeesSection";
 import SectionHeader from "@/components/SectionHeader";
 import { popularCourses } from "@/lib/courses/popular-courses";
 
@@ -61,6 +62,8 @@ export default function CoursesPage() {
           </div>
         </div>
       </section>
+
+      <CoursesFeesSection />
     </main>
   );
 }

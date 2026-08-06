@@ -38,7 +38,7 @@ export const popularCourses: PopularCourse[] = [
     duration: "20 Days",
     detailed: true,
     description:
-      "Designed for students, job seekers, entrepreneurs, and professionals, this twenty day Theory Programme covers Financial Accounting, Auditing, Financial Statement Analysis, Taxation, HR Management, and SOPs. Grounded in current legislation, accounting standards, and practical applications, it delivers the essential foundation needed to tackle complex business responsibilities and drive career success.",
+      "Designed for students, job seekers, entrepreneurs, and professionals, this twenty day Theory Programme covers Financial Accounting, Auditing, Financial Statement Analysis, Taxation, HR Management, and Standard Auditing Procedure. Grounded in current legislation, accounting standards, and practical applications, it delivers the essential foundation needed to tackle complex business responsibilities and drive career success.",
     modules: [
       "Taxation",
       "Accounting",

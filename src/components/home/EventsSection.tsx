@@ -9,18 +9,20 @@ const featuredEvent = {
   imageAlt: "Official Graduation 2026 group photo",
 };
 
-const upcomingEvents = [
+const upcomingWorkshops = [
   {
-    title: "Open Day 2026",
-    description: "Campus tour and program overview for prospective students.",
-    month: "Mar",
-    day: "15",
+    title: "HR 5 Days Workshop",
+    description:
+      "Practical HR administration, labour law, and workplace compliance over five intensive days.",
+    month: "Aug",
+    day: "10-14",
   },
   {
-    title: "Career Fair",
-    description: "Meet top employers and explore career opportunities in Colombo.",
-    month: "Apr",
-    day: "22",
+    title: "Tax 1 Days Workshop",
+    description:
+      "One-day focus on employment income tax, RAMIS, and hands-on tax return filing.",
+    month: "Aug",
+    day: "15",
   },
 ];
 
@@ -41,17 +43,10 @@ export default function EventsSection() {
 
           <div className="flex flex-col gap-6 lg:col-span-2">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-nlsc-gold-text">
-              Upcoming
+              Up Coming Workshop
             </p>
-            {upcomingEvents.map((event) => (
-              <EventCard
-                key={event.title}
-                title={event.title}
-                description={event.description}
-                month={event.month}
-                day={event.day}
-                compact
-              />
+            {upcomingWorkshops.map((workshop) => (
+              <EventCard key={workshop.title} {...workshop} compact />
             ))}
           </div>
         </div>
