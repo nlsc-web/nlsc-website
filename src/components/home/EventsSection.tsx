@@ -18,7 +18,7 @@ const upcomingWorkshops = [
     day: "10-14",
   },
   {
-    title: "Tax 1 Days Workshop",
+    title: "TAX 1 Days Workshop",
     description:
       "One-day focus on employment income tax, RAMIS, and hands-on tax return filing.",
     month: "Aug",

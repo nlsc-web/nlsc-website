@@ -38,13 +38,13 @@ export const popularCourses: PopularCourse[] = [
     duration: "20 Days",
     detailed: true,
     description:
-      "Designed for students, job seekers, entrepreneurs, and professionals, this twenty day Theory Programme covers Financial Accounting, Auditing, Financial Statement Analysis, Taxation, HR Management, and Standard Auditing Procedure. Grounded in current legislation, accounting standards, and practical applications, it delivers the essential foundation needed to tackle complex business responsibilities and drive career success.",
+      "Designed for students, job seekers, entrepreneurs, and professionals, this twenty day Theory Programme covers Financial Accounting, Auditing, Financial Statement Analysis, Taxation, HR Management, and Standard Operating Procedure. Grounded in current legislation, accounting standards, and practical applications, it delivers the essential foundation needed to tackle complex business responsibilities and drive career success.",
     modules: [
       "Taxation",
       "Accounting",
       "Human Resource Management",
       "Auditing",
-      "Ratio Analysis & SOP (Standard Auditing Procedure)",
+      "Ratio Analysis & SOP (Standard Operating Procedure)",
     ],
     outcome:
       "Upon successful completion, participants will possess a comprehensive theoretical understanding of essential accounting and business functions, providing a solid foundation for professional practice and further career development.",
@@ -77,7 +77,7 @@ export const popularCourses: PopularCourse[] = [
             "Introduction to Internal Controls, Internal Controls in Businesses, Record Keeping, and Documentation Standards.",
         },
         {
-          title: "Ratio Analysis & SOP (Standard Auditing Procedure)",
+          title: "Ratio Analysis & SOP (Standard Operating Procedure)",
           content:
             "Financial Statement Interpretation, Financial Ratio Analysis, Business Performance Evaluation, and Standard Operating Procedures.",
         },
