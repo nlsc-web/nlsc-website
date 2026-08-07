@@ -246,7 +246,7 @@ function AdminDashboardHome({
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={onAddUser}
+            onClick={() => onAddUser()}
             className="inline-flex items-center gap-2 rounded-lg border border-nlsc-gold/25 bg-white px-5 py-2.5 text-sm font-semibold transition-colors hover:border-nlsc-gold/55 hover:bg-nlsc-gold/5"
             style={{ color: lmsTokens.ink }}
           >

@@ -125,9 +125,9 @@ export async function updatePortalSettings(
       phone:
         input.phone === undefined
           ? undefined
-          : input.phone.trim()
-            ? input.phone.trim()
-            : null,
+          : input.phone === null
+            ? null
+            : input.phone.trim() || null,
       passwordHash: input.newPassword
         ? await bcrypt.hash(input.newPassword, 10)
         : undefined,
