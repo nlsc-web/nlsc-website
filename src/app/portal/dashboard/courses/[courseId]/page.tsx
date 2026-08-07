@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import StudentCourseModules from "@/components/portal/lms/StudentCourseModules";
 import { getStudentCourseDetail } from "@/lib/portal/services/student-portal";
 import { getPortalSession } from "@/lib/portal/session";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 
 type CoursePageProps = {
   params: Promise<{ courseId: string }>;
-};
-
-const moduleTypeLabels = {
-  video: "Video lesson",
-  document: "Document",
-  quiz: "Assessment",
 };
 
 export async function generateMetadata({
@@ -68,74 +63,18 @@ export default async function PortalCoursePage({ params }: CoursePageProps) {
           >
             {course.title}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed" style={{ color: lmsTokens.slate }}>
+          <p
+            className="mt-3 max-w-2xl text-sm leading-relaxed"
+            style={{ color: lmsTokens.slate }}
+          >
             {course.description}
           </p>
         </div>
 
-        <div
-          className="mb-6 rounded-lg border bg-white p-5"
-          style={{ borderColor: lmsTokens.line }}
-        >
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-semibold" style={{ color: lmsTokens.ink }}>
-              Course progress
-            </span>
-            <span className="font-bold" style={{ color: lmsTokens.gold500 }}>
-              {course.progress}%
-            </span>
-          </div>
-          <div
-            className="h-2 overflow-hidden rounded-full"
-            style={{ backgroundColor: lmsTokens.gold100 }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${course.progress}%`,
-                backgroundColor: lmsTokens.gold500,
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold" style={{ color: lmsTokens.ink }}>
-            Course modules
-          </h2>
-          {course.modules.map((module, index) => (
-            <article
-              key={module.id}
-              className="flex flex-col gap-3 rounded-xl border bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
-              style={{ borderColor: lmsTokens.line }}
-            >
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-[10px] font-bold uppercase tracking-wider"
-                  style={{ color: lmsTokens.slate }}
-                >
-                  Module {index + 1} · {moduleTypeLabels[module.type]}
-                </p>
-                <h3 className="mt-1 font-semibold" style={{ color: lmsTokens.ink }}>
-                  {module.title}
-                </h3>
-                <p className="mt-1 text-xs" style={{ color: lmsTokens.slate }}>
-                  {module.duration}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="w-full shrink-0 rounded-md border px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider transition hover:text-white sm:w-auto sm:py-2"
-                style={{
-                  borderColor: lmsTokens.gold500,
-                  color: lmsTokens.gold500,
-                }}
-              >
-                Open
-              </button>
-            </article>
-          ))}
-        </div>
+        <StudentCourseModules
+          modules={course.modules}
+          initialProgress={course.progress}
+        />
       </div>
     </div>
   );

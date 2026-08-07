@@ -4,7 +4,7 @@ import { BookOpenIcon, ChevronRightIcon } from "@/components/portal/lms/icons";
 import DashboardPanelHead from "@/components/portal/lms/DashboardPanelHead";
 import StatCard from "@/components/portal/lms/StatCard";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
 import type { StudentCourse } from "@/lib/portal/types/student-portal";
 
@@ -12,8 +12,39 @@ type StudentCoursesViewProps = {
   courses: StudentCourse[];
 };
 
-export default function StudentCoursesView({ courses }: StudentCoursesViewProps) {
+export default function StudentCoursesView({
+  courses: initialCourses,
+}: StudentCoursesViewProps) {
+  const [courses, setCourses] = useState(initialCourses);
   const [query, setQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    setCourses(initialCourses);
+  }, [initialCourses]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      setRefreshing(true);
+      try {
+        const response = await fetch("/api/portal/student/courses");
+        if (!response.ok) return;
+        const data = (await response.json()) as { courses?: StudentCourse[] };
+        if (!cancelled && Array.isArray(data.courses)) {
+          setCourses(data.courses);
+        }
+      } catch {
+        // Keep SSR data if refresh fails.
+      } finally {
+        if (!cancelled) setRefreshing(false);
+      }
+    }
+    void refresh();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const avgProgress =
     courses.length > 0
@@ -21,6 +52,11 @@ export default function StudentCoursesView({ courses }: StudentCoursesViewProps)
           courses.reduce((sum, c) => sum + c.progress, 0) / courses.length,
         )
       : 0;
+
+  const modulesCompleted = courses.reduce(
+    (sum, c) => sum + c.completedModules,
+    0,
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -54,6 +90,7 @@ export default function StudentCoursesView({ courses }: StudentCoursesViewProps)
           </h1>
           <p className="mt-1.5 text-sm" style={{ color: lmsTokens.slate }}>
             Continue learning across your enrolled NLSC programs.
+            {refreshing ? " Updating..." : ""}
           </p>
         </div>
       </div>
@@ -75,7 +112,7 @@ export default function StudentCoursesView({ courses }: StudentCoursesViewProps)
         />
         <StatCard
           label="Modules Completed"
-          value={String(courses.reduce((sum, c) => sum + c.completedModules, 0))}
+          value={String(modulesCompleted)}
           sub="Keep going!"
           accent={lmsTokens.good}
           subPill
@@ -89,7 +126,10 @@ export default function StudentCoursesView({ courses }: StudentCoursesViewProps)
           badge={
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-              style={{ backgroundColor: lmsTokens.gold100, color: lmsTokens.navy800 }}
+              style={{
+                backgroundColor: lmsTokens.gold100,
+                color: lmsTokens.navy800,
+              }}
             >
               {filtered.length}
             </span>
@@ -108,8 +148,13 @@ export default function StudentCoursesView({ courses }: StudentCoursesViewProps)
 
         <div className="grid gap-4 sm:grid-cols-2">
           {filtered.length === 0 ? (
-            <p className="col-span-full py-10 text-center text-sm" style={{ color: lmsTokens.slate }}>
-              No courses match your search.
+            <p
+              className="col-span-full py-10 text-center text-sm"
+              style={{ color: lmsTokens.slate }}
+            >
+              {courses.length === 0
+                ? "You are not enrolled in any courses yet."
+                : "No courses match your search."}
             </p>
           ) : (
             filtered.map((course) => (

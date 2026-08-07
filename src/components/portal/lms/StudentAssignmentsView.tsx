@@ -4,12 +4,13 @@ import { ClipboardListIcon } from "@/components/portal/lms/icons";
 import DashboardPanelHead from "@/components/portal/lms/DashboardPanelHead";
 import StatCard from "@/components/portal/lms/StatCard";
 import StatusBadge from "@/components/portal/lms/StatusBadge";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import type {
   AssignmentStatus,
   StudentAssignment,
 } from "@/lib/portal/types/student-portal";
+import { useRouter } from "next/navigation";
 
 type FilterKey = "all" | AssignmentStatus;
 
@@ -25,10 +26,18 @@ type StudentAssignmentsViewProps = {
 };
 
 export default function StudentAssignmentsView({
-  assignments,
+  assignments: initialAssignments,
 }: StudentAssignmentsViewProps) {
+  const router = useRouter();
+  const [assignments, setAssignments] = useState(initialAssignments);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAssignments(initialAssignments);
+  }, [initialAssignments]);
 
   const counts = useMemo(
     () => ({
@@ -52,6 +61,34 @@ export default function StudentAssignmentsView({
       return matchesFilter && matchesQuery;
     });
   }, [filter, query, assignments]);
+
+  async function handleSubmit(assignmentId: string) {
+    setBusyId(assignmentId);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/portal/student/assignments/${assignmentId}/submit`,
+        { method: "POST" },
+      );
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error ?? "Unable to submit assignment.");
+      }
+
+      setAssignments((current) =>
+        current.map((item) =>
+          item.id === assignmentId
+            ? { ...item, status: "submitted", submitted: true }
+            : item,
+        ),
+      );
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to submit.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1400px]">
@@ -119,6 +156,12 @@ export default function StudentAssignmentsView({
           }
         />
 
+        {error && (
+          <p className="mb-3 text-xs font-semibold" style={{ color: lmsTokens.bad }}>
+            {error}
+          </p>
+        )}
+
         <div className="mb-4 flex flex-wrap gap-2">
           {filters.map(({ key, label }) => (
             <button
@@ -127,7 +170,8 @@ export default function StudentAssignmentsView({
               onClick={() => setFilter(key)}
               className="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
               style={{
-                backgroundColor: filter === key ? lmsTokens.gold500 : "transparent",
+                backgroundColor:
+                  filter === key ? lmsTokens.gold500 : "transparent",
                 color: filter === key ? lmsTokens.navy900 : lmsTokens.slate,
                 border: `1px solid ${filter === key ? lmsTokens.gold500 : lmsTokens.line}`,
               }}
@@ -209,7 +253,10 @@ export default function StudentAssignmentsView({
                     >
                       {assignment.type}
                     </td>
-                    <td className="py-3.5 text-xs font-medium" style={{ color: lmsTokens.ink }}>
+                    <td
+                      className="py-3.5 text-xs font-medium"
+                      style={{ color: lmsTokens.ink }}
+                    >
                       {assignment.due}
                     </td>
                     <td
@@ -222,16 +269,21 @@ export default function StudentAssignmentsView({
                       <StatusBadge status={assignment.status} />
                     </td>
                     <td className="py-3.5">
-                      {assignment.status === "submitted" ? (
-                        <span className="text-xs" style={{ color: lmsTokens.slate }}>
-                          View
+                      {assignment.submitted ? (
+                        <span
+                          className="text-xs font-semibold"
+                          style={{ color: lmsTokens.good }}
+                        >
+                          Submitted
                         </span>
                       ) : (
                         <button
                           type="button"
-                          className="rounded-md border border-nlsc-gold bg-nlsc-gold px-3 py-1.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text"
+                          disabled={busyId === assignment.id}
+                          onClick={() => handleSubmit(assignment.id)}
+                          className="rounded-md border border-nlsc-gold bg-nlsc-gold px-3 py-1.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text disabled:opacity-60"
                         >
-                          Submit
+                          {busyId === assignment.id ? "..." : "Submit"}
                         </button>
                       )}
                     </td>

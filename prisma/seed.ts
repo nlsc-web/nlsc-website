@@ -367,20 +367,20 @@ async function main() {
       studentId: demoStudent.id,
       courseId: "fast-track-4days",
       status: "active",
-      progressPercent: 35,
-      completedModules: 4,
+      progressPercent: 50,
+      completedModules: 2,
       nextSessionAt: "Thu, 10:00 AM",
       enrolledAt: new Date("2026-06-15"),
     },
   });
 
-  await prisma.enrollment.create({
+  const enrollAllInclusive = await prisma.enrollment.create({
     data: {
       studentId: demoStudent.id,
       courseId: "all-inclusive-20days",
       status: "active",
-      progressPercent: 10,
-      completedModules: 3,
+      progressPercent: 17,
+      completedModules: 1,
       nextSessionAt: "Wed, 3:00 PM",
       enrolledAt: new Date("2026-06-20"),
     },
@@ -411,7 +411,7 @@ async function main() {
     });
   }
 
-  // Mark first 2 modules complete for demo fast-track enrollment
+  // Demo progress: 2/4 fast-track modules, 1/6 all-inclusive modules
   for (const moduleId of ["ft-1", "ft-2"]) {
     await prisma.moduleProgress.create({
       data: {
@@ -421,6 +421,14 @@ async function main() {
       },
     });
   }
+
+  await prisma.moduleProgress.create({
+    data: {
+      enrollmentId: enrollAllInclusive.id,
+      moduleId: "ai-1",
+      completedAt: new Date("2026-07-18"),
+    },
+  });
 
   // --- Assignments ---
   await prisma.assignment.createMany({
@@ -491,48 +499,68 @@ async function main() {
   });
 
   // --- Class sessions + attendance ---
-  const sessions = [
+  const sessions: Array<{
+    id: string;
+    courseId: string;
+    title: string;
+    startsAt: Date;
+    status: "present" | "absent" | "late" | "excused" | null;
+  }> = [
     {
       id: "sess-1",
       courseId: "fast-track-4days",
       title: "Practical Accounting Lab",
       startsAt: new Date("2026-08-04T10:00:00"),
-      status: "present" as const,
+      status: "present",
     },
     {
       id: "sess-2",
       courseId: "all-inclusive-20days",
       title: "Taxation Basics",
       startsAt: new Date("2026-08-03T15:00:00"),
-      status: "present" as const,
+      status: "present",
     },
     {
       id: "sess-3",
       courseId: "fast-track-4days",
       title: "Accounting Software Intro",
       startsAt: new Date("2026-08-02T10:00:00"),
-      status: "late" as const,
+      status: "late",
     },
     {
       id: "sess-4",
       courseId: "all-inclusive-20days",
       title: "HR & Auditing Overview",
       startsAt: new Date("2026-08-01T15:00:00"),
-      status: "present" as const,
+      status: "present",
     },
     {
       id: "sess-5",
       courseId: "fast-track-4days",
       title: "Invoice Processing Workshop",
       startsAt: new Date("2026-07-31T10:00:00"),
-      status: "absent" as const,
+      status: "absent",
     },
     {
       id: "sess-6",
       courseId: "all-inclusive-20days",
       title: "Career Guidance Seminar",
       startsAt: new Date("2026-07-30T16:00:00"),
-      status: "present" as const,
+      status: "present",
+    },
+    {
+      id: "sess-upcoming-1",
+      courseId: "fast-track-4days",
+      title: "Day 3 — Ledgers & Trial Balance",
+      startsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      status: null,
+    },
+    {
+      id: "sess-upcoming-2",
+      courseId: "all-inclusive-20days",
+      title: "Week 2 — Financial Reporting",
+      startsAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      status: null,
     },
   ];
 
@@ -545,14 +573,16 @@ async function main() {
         startsAt: session.startsAt,
       },
     });
-    await prisma.attendanceRecord.create({
-      data: {
-        id: `att-${session.id}`,
-        studentId: demoStudent.id,
-        sessionId: session.id,
-        status: session.status,
-      },
-    });
+    if (session.status) {
+      await prisma.attendanceRecord.create({
+        data: {
+          id: `att-${session.id}`,
+          studentId: demoStudent.id,
+          sessionId: session.id,
+          status: session.status,
+        },
+      });
+    }
   }
 
   // --- Announcements ---

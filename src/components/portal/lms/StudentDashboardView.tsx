@@ -12,7 +12,7 @@ import {
 import DashboardPanelHead from "@/components/portal/lms/DashboardPanelHead";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PortalShell from "@/components/portal/lms/PortalShell";
 import PortalSettingsView from "@/components/portal/lms/PortalSettingsView";
 import StatCard from "@/components/portal/lms/StatCard";
@@ -319,6 +319,7 @@ function StudentMainContent({
   studentId,
   greeting,
   portalData,
+  searchQuery,
   onNavigate,
 }: {
   active: string;
@@ -326,8 +327,30 @@ function StudentMainContent({
   studentId: string;
   greeting: string;
   portalData: StudentPortalData;
+  searchQuery: string;
   onNavigate: (label: string) => void;
 }) {
+  const q = searchQuery.trim().toLowerCase();
+  const filteredCourses = useMemo(() => {
+    if (!q) return portalData.courses;
+    return portalData.courses.filter(
+      (course) =>
+        course.name.toLowerCase().includes(q) ||
+        course.code.toLowerCase().includes(q) ||
+        course.instructor.toLowerCase().includes(q),
+    );
+  }, [portalData.courses, q]);
+
+  const filteredAssignments = useMemo(() => {
+    if (!q) return portalData.assignments;
+    return portalData.assignments.filter(
+      (assignment) =>
+        assignment.title.toLowerCase().includes(q) ||
+        assignment.course.toLowerCase().includes(q) ||
+        assignment.type.toLowerCase().includes(q),
+    );
+  }, [portalData.assignments, q]);
+
   switch (active) {
     case "Dashboard":
       return (
@@ -338,9 +361,9 @@ function StudentMainContent({
         />
       );
     case "My Courses":
-      return <StudentCoursesView courses={portalData.courses} />;
+      return <StudentCoursesView courses={filteredCourses} />;
     case "Assignments":
-      return <StudentAssignmentsView assignments={portalData.assignments} />;
+      return <StudentAssignmentsView assignments={filteredAssignments} />;
     case "Attendance":
       return <StudentAttendanceView attendance={portalData.attendance} />;
     case "Settings":
@@ -369,6 +392,7 @@ export default function StudentDashboardView({
 }: StudentDashboardViewProps) {
   const router = useRouter();
   const [active, setActive] = useState("Dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
   const greeting = getDashboardGreeting(studentName);
 
   async function handleLogout() {
@@ -377,15 +401,29 @@ export default function StudentDashboardView({
     router.refresh();
   }
 
+  function handleNavigate(label: string) {
+    setActive(label);
+    if (label === "Dashboard") {
+      setSearchQuery("");
+    }
+  }
+
   return (
     <PortalShell
       userName={studentName}
       userId={studentId}
       roleLabel="Student"
       searchPlaceholder="Search courses, assignments..."
+      searchValue={searchQuery}
+      onSearchChange={(value) => {
+        setSearchQuery(value);
+        if (value.trim().length >= 2 && active === "Dashboard") {
+          setActive("My Courses");
+        }
+      }}
       navItems={navItems}
       active={active}
-      onNavigate={setActive}
+      onNavigate={handleNavigate}
       onLogout={handleLogout}
     >
       <StudentMainContent
@@ -394,7 +432,8 @@ export default function StudentDashboardView({
         studentId={studentId}
         greeting={greeting}
         portalData={portalData}
-        onNavigate={setActive}
+        searchQuery={searchQuery}
+        onNavigate={handleNavigate}
       />
     </PortalShell>
   );

@@ -1,6 +1,6 @@
 import type { ApprovalType, Role } from "@prisma/client";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { isDatabaseUnavailable } from "@/lib/portal/db-unavailable";
 import { getAdminPortalFallbackData } from "@/lib/portal/services/admin-portal-fallback";
 import type {
   AdminAnnouncement,
@@ -160,23 +160,6 @@ function isThisMonth(date: Date) {
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth()
   );
-}
-
-function isDatabaseUnavailable(error: unknown) {
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError ||
-    error instanceof Prisma.PrismaClientInitializationError
-  ) {
-    return true;
-  }
-
-  if (error instanceof Error) {
-    return /can't reach database|P1001|P1017|ECONNREFUSED|connection/i.test(
-      error.message,
-    );
-  }
-
-  return false;
 }
 
 export async function getAdminPortalData(): Promise<AdminPortalData> {

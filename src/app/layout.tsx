@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 import ConditionalSiteChrome from "@/components/layout/ConditionalSiteChrome";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
-const themeScript = `
-(function () {
+const themeScript = `(function () {
   try {
     var theme = localStorage.getItem("theme");
     if (
@@ -17,8 +17,7 @@ const themeScript = `
       document.documentElement.classList.remove("dark");
     }
   } catch (e) {}
-})();
-`;
+})();`;
 
 const inter = Inter({
   variable: "--font-inter",
@@ -52,10 +51,10 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className={`${inter.className} min-h-full font-sans antialiased`}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <ThemeProvider>
           <ConditionalSiteChrome>{children}</ConditionalSiteChrome>
         </ThemeProvider>

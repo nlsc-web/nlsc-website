@@ -24,6 +24,7 @@ export type StudentAssignment = {
   status: AssignmentStatus;
   type: string;
   points: number;
+  submitted: boolean;
 };
 
 export type StudentAnnouncement = {
@@ -65,6 +66,7 @@ export type PortalModule = {
   title: string;
   duration: string;
   type: "video" | "document" | "quiz";
+  completed: boolean;
 };
 
 export type PortalCourseDetail = {
