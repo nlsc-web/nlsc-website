@@ -1,5 +1,7 @@
 import type { ApprovalType, Role } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getAdminPortalFallbackData } from "@/lib/portal/services/admin-portal-fallback";
 import type {
   AdminAnnouncement,
   AdminContactInquiry,
@@ -160,7 +162,40 @@ function isThisMonth(date: Date) {
   );
 }
 
+function isDatabaseUnavailable(error: unknown) {
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError ||
+    error instanceof Prisma.PrismaClientInitializationError
+  ) {
+    return true;
+  }
+
+  if (error instanceof Error) {
+    return /can't reach database|P1001|P1017|ECONNREFUSED|connection/i.test(
+      error.message,
+    );
+  }
+
+  return false;
+}
+
 export async function getAdminPortalData(): Promise<AdminPortalData> {
+  try {
+    return await loadAdminPortalDataFromDb();
+  } catch (error) {
+    if (isDatabaseUnavailable(error)) {
+      console.warn(
+        "[admin-portal] Database unavailable, using demo fallback data.",
+        error instanceof Error ? error.message : error,
+      );
+      return getAdminPortalFallbackData();
+    }
+
+    throw error;
+  }
+}
+
+async function loadAdminPortalDataFromDb(): Promise<AdminPortalData> {
   const [
     campusSettings,
     studentRows,
@@ -332,6 +367,7 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
     category: mapReportCategory(report.category),
     period: report.period,
     generated: formatMonthYear(report.generatedAt),
+    generatedAt: report.generatedAt.toISOString(),
     format: report.format as AdminReport["format"],
     size: report.size,
   }));
@@ -352,6 +388,7 @@ export async function getAdminPortalData(): Promise<AdminPortalData> {
     email: item.email,
     subject: item.subject ?? "General inquiry",
     message: item.message,
+    status: item.status === "read" ? "read" : "unread",
     createdAt: formatPostedDate(item.createdAt),
     receivedAt: item.createdAt.toISOString(),
   }));

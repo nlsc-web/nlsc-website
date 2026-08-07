@@ -90,6 +90,11 @@ enum ReportFormat {
   XLSX
 }
 
+enum ContactInquiryStatus {
+  unread
+  read
+}
+
 model User {
   id           String     @id
   email        String     @unique
@@ -298,10 +303,13 @@ model Report {
 }
 
 model ContactInquiry {
-  id        String   @id @default(cuid())
+  id        String               @id @default(cuid())
   name      String
   email     String
   subject   String?
   message   String
-  createdAt DateTime @default(now())
+  status    ContactInquiryStatus @default(unread)
+  createdAt DateTime             @default(now())
+
+  @@index([status, createdAt])
 }

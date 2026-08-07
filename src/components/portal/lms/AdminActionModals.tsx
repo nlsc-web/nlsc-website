@@ -89,6 +89,9 @@ function Field({
   defaultValue,
   as = "input",
   options,
+  autoComplete,
+  value,
+  onChange,
 }: {
   label: string;
   name: string;
@@ -98,6 +101,9 @@ function Field({
   defaultValue?: string;
   as?: "input" | "select" | "textarea";
   options?: Array<{ value: string; label: string }>;
+  autoComplete?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }) {
   const className =
     "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-nlsc-gold/50";
@@ -109,7 +115,15 @@ function Field({
         {label}
       </span>
       {as === "select" ? (
-        <select name={name} required={required} className={className} style={style} defaultValue={defaultValue}>
+        <select
+          name={name}
+          required={required}
+          className={className}
+          style={style}
+          value={value}
+          defaultValue={value === undefined ? defaultValue : undefined}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        >
           {options?.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -125,6 +139,7 @@ function Field({
           className={className}
           style={style}
           defaultValue={defaultValue}
+          autoComplete={autoComplete}
         />
       ) : (
         <input
@@ -134,7 +149,10 @@ function Field({
           placeholder={placeholder}
           className={className}
           style={style}
-          defaultValue={defaultValue}
+          value={value}
+          defaultValue={value === undefined ? defaultValue : undefined}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          autoComplete={autoComplete ?? "off"}
         />
       )}
     </label>
@@ -145,11 +163,34 @@ type AddUserModalProps = {
   courses: Array<{ id: string; code: string; title: string }>;
   onClose: () => void;
   onCreated: () => Promise<void>;
+  defaultRole?: "student" | "instructor";
 };
 
-export function AddUserModal({ courses, onClose, onCreated }: AddUserModalProps) {
+function suggestUserId(role: "student" | "instructor") {
+  const suffix = Date.now().toString().slice(-4);
+  return role === "instructor" ? `INS-${suffix}` : `STU-${suffix}`;
+}
+
+export function AddUserModal({
+  courses,
+  onClose,
+  onCreated,
+  defaultRole = "student",
+}: AddUserModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [role, setRole] = useState<"student" | "instructor">(defaultRole);
+  const [userId, setUserId] = useState(() => suggestUserId(defaultRole));
+
+  function handleRoleChange(nextRole: string) {
+    const normalized = nextRole === "instructor" ? "instructor" : "student";
+    setRole(normalized);
+    setUserId((current) => {
+      const isSuggested =
+        /^STU-\d+$/.test(current) || /^INS-\d+$/.test(current) || current === "";
+      return isSuggested ? suggestUserId(normalized) : current;
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,18 +198,18 @@ export function AddUserModal({ courses, onClose, onCreated }: AddUserModalProps)
     setError(null);
 
     const form = new FormData(event.currentTarget);
-    const role = String(form.get("role") ?? "student") as "student" | "instructor";
 
     try {
       const { postAdminUser } = await import("@/lib/portal/admin-api");
       await postAdminUser({
-        id: String(form.get("id") ?? ""),
-        name: String(form.get("name") ?? ""),
-        email: String(form.get("email") ?? ""),
+        id: userId.trim(),
+        name: String(form.get("name") ?? "").trim(),
+        email: String(form.get("email") ?? "").trim(),
         password: String(form.get("password") ?? ""),
         role,
         courseId: role === "student" ? String(form.get("courseId") ?? "") : undefined,
-        department: role === "instructor" ? String(form.get("department") ?? "") : undefined,
+        department:
+          role === "instructor" ? String(form.get("department") ?? "") : undefined,
       });
       await onCreated();
       onClose();
@@ -181,42 +222,74 @@ export function AddUserModal({ courses, onClose, onCreated }: AddUserModalProps)
 
   return (
     <AdminActionModal
-      title="Add User"
+      title={role === "instructor" ? "Add Instructor" : "Add Student"}
       onClose={onClose}
       onSubmit={handleSubmit}
       loading={loading}
       error={error}
     >
-      <Field label="User ID" name="id" placeholder="STU-1050" />
-      <Field label="Full Name" name="name" placeholder="Student name" />
-      <Field label="Email" name="email" type="email" placeholder="user@student.nlsc.lk" />
-      <Field label="Password" name="password" type="password" placeholder="Temporary password" />
+      <Field
+        label="User ID"
+        name="id"
+        placeholder={role === "instructor" ? "INS-010" : "STU-1050"}
+        value={userId}
+        onChange={setUserId}
+        autoComplete="off"
+      />
+      <Field
+        label="Full Name"
+        name="name"
+        placeholder={role === "instructor" ? "Instructor name" : "Student name"}
+        autoComplete="off"
+      />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        placeholder="user@student.nlsc.lk"
+        autoComplete="off"
+      />
+      <Field
+        label="Password"
+        name="password"
+        type="password"
+        placeholder="Temporary password"
+        autoComplete="new-password"
+      />
       <Field
         label="Role"
         name="role"
         as="select"
-        defaultValue="student"
+        value={role}
+        onChange={handleRoleChange}
         options={[
           { value: "student", label: "Student" },
           { value: "instructor", label: "Instructor" },
         ]}
       />
-      <Field
-        label="Enroll in Course (students)"
-        name="courseId"
-        as="select"
-        required={false}
-        options={[
-          { value: "", label: "None" },
-          ...courses.map((c) => ({ value: c.id, label: `${c.code} — ${c.title}` })),
-        ]}
-      />
-      <Field
-        label="Department (instructors)"
-        name="department"
-        required={false}
-        placeholder="Accounting Faculty"
-      />
+      {role === "student" ? (
+        <Field
+          label="Enroll in Course"
+          name="courseId"
+          as="select"
+          required={false}
+          options={[
+            { value: "", label: "None" },
+            ...courses.map((c) => ({
+              value: c.id,
+              label: `${c.code} — ${c.title}`,
+            })),
+          ]}
+        />
+      ) : (
+        <Field
+          label="Department"
+          name="department"
+          required={false}
+          placeholder="Accounting Faculty"
+          autoComplete="off"
+        />
+      )}
     </AdminActionModal>
   );
 }
@@ -227,6 +300,10 @@ type NewCourseModalProps = {
   onCreated: () => Promise<void>;
 };
 
+function suggestCourseId() {
+  return `course-${Date.now().toString().slice(-6)}`;
+}
+
 export function NewCourseModal({
   instructors,
   onClose,
@@ -234,6 +311,7 @@ export function NewCourseModal({
 }: NewCourseModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [courseId, setCourseId] = useState(() => suggestCourseId());
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -246,13 +324,16 @@ export function NewCourseModal({
     try {
       const { postAdminCourse } = await import("@/lib/portal/admin-api");
       await postAdminCourse({
-        id: String(form.get("id") ?? ""),
-        code: String(form.get("code") ?? ""),
-        title: String(form.get("title") ?? ""),
-        duration: String(form.get("duration") ?? ""),
-        description: String(form.get("description") ?? ""),
+        id: courseId.trim(),
+        code: String(form.get("code") ?? "").trim(),
+        title: String(form.get("title") ?? "").trim(),
+        duration: String(form.get("duration") ?? "").trim(),
+        description: String(form.get("description") ?? "").trim(),
         instructorId: instructorId || undefined,
-        status: String(form.get("status") ?? "draft") as "draft" | "active" | "pending",
+        status: String(form.get("status") ?? "draft") as
+          | "draft"
+          | "active"
+          | "pending",
       });
       await onCreated();
       onClose();
@@ -271,11 +352,38 @@ export function NewCourseModal({
       loading={loading}
       error={error}
     >
-      <Field label="Course ID" name="id" placeholder="new-course-id" />
-      <Field label="Course Code" name="code" placeholder="ACC 101" />
-      <Field label="Title" name="title" placeholder="Course title" />
-      <Field label="Duration" name="duration" placeholder="4 Days" />
-      <Field label="Description" name="description" as="textarea" required={false} />
+      <Field
+        label="Course ID"
+        name="id"
+        placeholder="course-101"
+        value={courseId}
+        onChange={setCourseId}
+        autoComplete="off"
+      />
+      <Field
+        label="Course Code"
+        name="code"
+        placeholder="ACC 101"
+        autoComplete="off"
+      />
+      <Field
+        label="Title"
+        name="title"
+        placeholder="Course title"
+        autoComplete="off"
+      />
+      <Field
+        label="Duration"
+        name="duration"
+        placeholder="4 Days"
+        autoComplete="off"
+      />
+      <Field
+        label="Description"
+        name="description"
+        as="textarea"
+        required={false}
+      />
       <Field
         label="Instructor"
         name="instructorId"
@@ -290,10 +398,10 @@ export function NewCourseModal({
         label="Status"
         name="status"
         as="select"
-        defaultValue="draft"
+        defaultValue="active"
         options={[
-          { value: "draft", label: "Draft" },
           { value: "active", label: "Active" },
+          { value: "draft", label: "Draft" },
           { value: "pending", label: "Pending" },
         ]}
       />
@@ -377,6 +485,103 @@ export function PostAnnouncementModal({
           { value: "scheduled", label: "Scheduled" },
         ]}
       />
+    </AdminActionModal>
+  );
+}
+
+type GenerateReportModalProps = {
+  onClose: () => void;
+  onCreated: () => Promise<void>;
+};
+
+export function GenerateReportModal({
+  onClose,
+  onCreated,
+}: GenerateReportModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const form = new FormData(event.currentTarget);
+
+    try {
+      const { postAdminReport } = await import("@/lib/portal/admin-api");
+      await postAdminReport({
+        title: String(form.get("title") ?? "").trim(),
+        category: String(form.get("category") ?? "enrollment") as
+          | "enrollment"
+          | "attendance"
+          | "performance"
+          | "financial",
+        period: String(form.get("period") ?? "").trim(),
+        format: String(form.get("format") ?? "CSV") as "PDF" | "CSV" | "XLSX",
+      });
+      await onCreated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to generate report.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const now = new Date();
+  const defaultPeriod = now.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <AdminActionModal
+      title="Generate Report"
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      loading={loading}
+      error={error}
+    >
+      <Field
+        label="Report Title"
+        name="title"
+        placeholder="Monthly Enrollment Summary"
+        autoComplete="off"
+      />
+      <Field
+        label="Category"
+        name="category"
+        as="select"
+        defaultValue="enrollment"
+        options={[
+          { value: "enrollment", label: "Enrollment" },
+          { value: "attendance", label: "Attendance" },
+          { value: "performance", label: "Performance" },
+          { value: "financial", label: "Financial" },
+        ]}
+      />
+      <Field
+        label="Period"
+        name="period"
+        placeholder="August 2026"
+        defaultValue={defaultPeriod}
+        autoComplete="off"
+      />
+      <Field
+        label="Format"
+        name="format"
+        as="select"
+        defaultValue="CSV"
+        options={[
+          { value: "CSV", label: "CSV (downloadable)" },
+          { value: "PDF", label: "PDF" },
+          { value: "XLSX", label: "XLSX" },
+        ]}
+      />
+      <p className="text-xs" style={{ color: lmsTokens.slate }}>
+        Downloads are generated as CSV from live portal data.
+      </p>
     </AdminActionModal>
   );
 }

@@ -8,6 +8,7 @@ import {
 import EnrollmentTrendChart from "@/components/portal/lms/EnrollmentTrendChart";
 import ProgramLoadChart from "@/components/portal/lms/ProgramLoadChart";
 import StatCard from "@/components/portal/lms/StatCard";
+import { getAdminReportDownloadUrl } from "@/lib/portal/admin-api";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import type {
   AdminReport,
@@ -38,12 +39,14 @@ type AdminReportsViewProps = {
   reports: AdminReport[];
   enrollmentTrend: EnrollmentTrendPoint[];
   programLoad: ProgramLoadPoint[];
+  onGenerateReport?: () => void;
 };
 
 export default function AdminReportsView({
   reports: adminReports,
   enrollmentTrend,
   programLoad,
+  onGenerateReport,
 }: AdminReportsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
@@ -51,12 +54,22 @@ export default function AdminReportsView({
   const counts = useMemo(() => {
     const byCategory = (cat: ReportCategory) =>
       adminReports.filter((r) => r.category === cat).length;
+    const now = new Date();
+    const thisMonth = adminReports.filter((r) => {
+      const date = new Date(r.generatedAt);
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth()
+      );
+    }).length;
+
     return {
       all: adminReports.length,
       enrollment: byCategory("enrollment"),
       attendance: byCategory("attendance"),
       performance: byCategory("performance"),
       financial: byCategory("financial"),
+      thisMonth,
     };
   }, [adminReports]);
 
@@ -75,7 +88,7 @@ export default function AdminReportsView({
 
   return (
     <>
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div
           className="border-l-2 pl-4 sm:pl-5"
           style={{ borderColor: lmsTokens.gold500 }}
@@ -92,10 +105,21 @@ export default function AdminReportsView({
           >
             Reports & Analytics
           </h1>
-          <p className="mt-1 text-xs sm:mt-1.5 sm:text-sm" style={{ color: lmsTokens.slate }}>
+          <p
+            className="mt-1 text-xs sm:mt-1.5 sm:text-sm"
+            style={{ color: lmsTokens.slate }}
+          >
             Enrollment trends, performance metrics, and downloadable reports.
           </p>
         </div>
+        <button
+          type="button"
+          onClick={onGenerateReport}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-nlsc-gold bg-nlsc-gold px-4 py-2.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text sm:flex-none"
+        >
+          <BarChartIcon size={14} />
+          Generate Report
+        </button>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:grid-cols-4 sm:gap-4">
@@ -115,7 +139,7 @@ export default function AdminReportsView({
         />
         <StatCard
           label="This Month"
-          value="4"
+          value={String(counts.thisMonth)}
           sub="Reports generated"
           accent={lmsTokens.good}
           subPill
@@ -155,7 +179,10 @@ export default function AdminReportsView({
             Generated Reports
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-              style={{ backgroundColor: lmsTokens.gold100, color: lmsTokens.navy800 }}
+              style={{
+                backgroundColor: lmsTokens.gold100,
+                color: lmsTokens.navy800,
+              }}
             >
               {filtered.length}
             </span>
@@ -241,6 +268,7 @@ export default function AdminReportsView({
           <span>{filtered.length} reports available</span>
           <button
             type="button"
+            onClick={onGenerateReport}
             className="flex items-center gap-1 font-semibold transition-opacity hover:opacity-80"
             style={{ color: lmsTokens.gold500 }}
           >
@@ -257,10 +285,16 @@ function ReportRow({ report }: { report: AdminReport }) {
     <tr className="transition-colors hover:bg-neutral-50/80">
       <td className="py-3 pr-2 sm:py-3.5">
         <div className="min-w-0">
-          <div className="text-xs font-medium sm:text-sm" style={{ color: lmsTokens.ink }}>
+          <div
+            className="text-xs font-medium sm:text-sm"
+            style={{ color: lmsTokens.ink }}
+          >
             {report.title}
           </div>
-          <div className="mt-0.5 text-[11px] sm:hidden" style={{ color: lmsTokens.slate }}>
+          <div
+            className="mt-0.5 text-[11px] sm:hidden"
+            style={{ color: lmsTokens.slate }}
+          >
             {categoryLabels[report.category]} · {report.size}
           </div>
         </div>
@@ -268,7 +302,10 @@ function ReportRow({ report }: { report: AdminReport }) {
       <td className="hidden py-3.5 sm:table-cell">
         <span
           className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-          style={{ backgroundColor: lmsTokens.gold100, color: lmsTokens.navy800 }}
+          style={{
+            backgroundColor: lmsTokens.gold100,
+            color: lmsTokens.navy800,
+          }}
         >
           {categoryLabels[report.category]}
         </span>
@@ -291,13 +328,16 @@ function ReportRow({ report }: { report: AdminReport }) {
         </span>
       </td>
       <td className="py-3 text-right sm:py-3.5">
-        <button
-          type="button"
-          className="rounded-md px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-90"
-          style={{ backgroundColor: lmsTokens.gold500, color: lmsTokens.navy900 }}
+        <a
+          href={getAdminReportDownloadUrl(report.id)}
+          className="inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-90"
+          style={{
+            backgroundColor: lmsTokens.gold500,
+            color: lmsTokens.navy900,
+          }}
         >
           Download
-        </button>
+        </a>
       </td>
     </tr>
   );

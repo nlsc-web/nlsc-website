@@ -6,6 +6,7 @@ export type {
   AdminReport,
   AdminStudent,
   AnnouncementStatus,
+  ContactInquiryStatus,
   CourseStatus,
   ReportCategory,
   UserStatus,

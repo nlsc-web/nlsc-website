@@ -98,11 +98,14 @@ export async function updateApproval(
 }
 
 export async function createPortalUser(input: CreateUserInput) {
-  const existing = await prisma.user.findFirst({
-    where: { OR: [{ id: input.id }, { email: input.email }] },
-  });
-  if (existing) {
-    throw new Error("A user with this ID or email already exists.");
+  const idTaken = await prisma.user.findUnique({ where: { id: input.id } });
+  if (idTaken) {
+    throw new Error(`User ID "${input.id}" is already taken. Try a different ID.`);
+  }
+
+  const emailTaken = await prisma.user.findUnique({ where: { email: input.email } });
+  if (emailTaken) {
+    throw new Error(`Email "${input.email}" is already registered.`);
   }
 
   const role: Role = input.role === "instructor" ? "instructor" : "student";
@@ -115,8 +118,8 @@ export async function createPortalUser(input: CreateUserInput) {
       email: input.email,
       passwordHash,
       role,
-      status: role === "student" ? "active" : "pending",
-      department: input.department,
+      status: "active",
+      department: role === "instructor" ? input.department : null,
       notificationPrefs: { create: {} },
     },
   });
@@ -139,12 +142,35 @@ export async function createPortalUser(input: CreateUserInput) {
   return user;
 }
 
-export async function createPortalCourse(input: CreateCourseInput) {
-  const existing = await prisma.course.findFirst({
-    where: { OR: [{ id: input.id }, { code: input.code }] },
+export async function updatePortalUserStatus(
+  id: string,
+  status: "active" | "pending" | "suspended",
+) {
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("User not found.");
+  }
+  if (existing.role === "admin") {
+    throw new Error("Admin accounts cannot be updated here.");
+  }
+
+  return prisma.user.update({
+    where: { id },
+    data: { status },
   });
-  if (existing) {
-    throw new Error("A course with this ID or code already exists.");
+}
+
+export async function createPortalCourse(input: CreateCourseInput) {
+  const idTaken = await prisma.course.findUnique({ where: { id: input.id } });
+  if (idTaken) {
+    throw new Error(`Course ID "${input.id}" is already taken.`);
+  }
+
+  const codeTaken = await prisma.course.findFirst({
+    where: { code: input.code },
+  });
+  if (codeTaken) {
+    throw new Error(`Course code "${input.code}" is already taken.`);
   }
 
   if (input.instructorId) {
@@ -164,6 +190,21 @@ export async function createPortalCourse(input: CreateCourseInput) {
       status: input.status ?? "draft",
       instructorId: input.instructorId,
     },
+  });
+}
+
+export async function updatePortalCourseStatus(
+  id: string,
+  status: "draft" | "active" | "pending",
+) {
+  const existing = await prisma.course.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Course not found.");
+  }
+
+  return prisma.course.update({
+    where: { id },
+    data: { status },
   });
 }
 
@@ -187,6 +228,39 @@ export async function createPortalAnnouncement(
       postedAt,
     },
   });
+}
+
+export async function updatePortalAnnouncementStatus(
+  id: string,
+  status: "published" | "draft" | "scheduled",
+) {
+  const existing = await prisma.announcement.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Announcement not found.");
+  }
+
+  return prisma.announcement.update({
+    where: { id },
+    data: {
+      status,
+      postedAt:
+        status === "published"
+          ? existing.postedAt ?? new Date()
+          : status === "draft"
+            ? null
+            : existing.postedAt,
+    },
+  });
+}
+
+export async function deletePortalAnnouncement(id: string) {
+  const existing = await prisma.announcement.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Announcement not found.");
+  }
+
+  await prisma.announcement.delete({ where: { id } });
+  return { id };
 }
 
 export async function searchAdminPortal(query: string): Promise<AdminSearchResult> {
@@ -265,4 +339,29 @@ export async function searchAdminPortal(query: string): Promise<AdminSearchResul
       status: c.status,
     })),
   };
+}
+
+export async function updateContactInquiryStatus(
+  id: string,
+  status: "unread" | "read",
+) {
+  const existing = await prisma.contactInquiry.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Message not found.");
+  }
+
+  return prisma.contactInquiry.update({
+    where: { id },
+    data: { status },
+  });
+}
+
+export async function deleteContactInquiry(id: string) {
+  const existing = await prisma.contactInquiry.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Message not found.");
+  }
+
+  await prisma.contactInquiry.delete({ where: { id } });
+  return { id };
 }

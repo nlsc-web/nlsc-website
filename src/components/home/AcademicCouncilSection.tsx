@@ -2,9 +2,24 @@ import SectionHeader from "@/components/SectionHeader";
 import CourseCard from "./CourseCard";
 
 const councilMembers = [
-  { title: "Dr. Anil Perera", description: "Dean of Academic Affairs" },
-  { title: "Prof. Nimali Fernando", description: "Head of Technology Programs" },
-  { title: "Mr. Ruwan Silva", description: "Director of Student Success" },
+  {
+    title: "Ms. Lakmali",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/ms-lakmali.png",
+    imageAlt: "Ms. Lakmali — Academic Council",
+  },
+  {
+    title: "Mr. Earnest",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/mr-earnest.png",
+    imageAlt: "Mr. Earnest — Academic Council",
+  },
+  {
+    title: "Mr. Ranjith",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/mr-ranjith.png",
+    imageAlt: "Mr. Ranjith — Academic Council",
+  },
 ];
 
 export default function AcademicCouncilSection() {
@@ -18,6 +33,9 @@ export default function AcademicCouncilSection() {
               key={member.title}
               title={member.title}
               description={member.description}
+              imageSrc={member.imageSrc}
+              imageAlt={member.imageAlt}
+              imageFit="contain"
               variant="image"
             />
           ))}

@@ -57,6 +57,7 @@ export type AdminReport = {
   category: ReportCategory;
   period: string;
   generated: string;
+  generatedAt: string;
   format: "PDF" | "CSV" | "XLSX";
   size: string;
 };
@@ -107,12 +108,15 @@ export type AdminCourse = {
   updated: string;
 };
 
+export type ContactInquiryStatus = "unread" | "read";
+
 export type AdminContactInquiry = {
   id: string;
   name: string;
   email: string;
   subject: string;
   message: string;
+  status: ContactInquiryStatus;
   createdAt: string;
   receivedAt: string;
 };

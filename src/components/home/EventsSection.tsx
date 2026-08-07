@@ -15,7 +15,7 @@ const upcomingWorkshops = [
     description:
       "Practical HR administration, labour law, and workplace compliance over five intensive days.",
     month: "Aug",
-    day: "10-14",
+    day: "17-21",
   },
   {
     title: "TAX 1 Days Workshop",

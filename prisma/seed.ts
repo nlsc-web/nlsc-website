@@ -719,6 +719,27 @@ async function main() {
     ],
   });
 
+  await prisma.contactInquiry.createMany({
+    data: [
+      {
+        name: "W.T. Bhagya",
+        email: "bhagya@gmail.com",
+        subject: "Course information",
+        message: "I need to know the courses fees.",
+        status: "unread",
+        createdAt: new Date("2026-08-06T09:00:00.000Z"),
+      },
+      {
+        name: "Kasun Perera",
+        email: "kasun@example.com",
+        subject: "General inquiry",
+        message: "What are the office hours for admissions?",
+        status: "read",
+        createdAt: new Date("2026-08-05T04:30:00.000Z"),
+      },
+    ],
+  });
+
   console.log("Seed complete.");
   console.log(`  Admin:    ${admin.id} / (PORTAL_DEMO_ADMIN_PASSWORD)`);
   console.log(`  Student:  ${demoStudent.id} / (PORTAL_DEMO_PASSWORD)`);

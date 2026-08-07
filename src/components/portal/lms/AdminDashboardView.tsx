@@ -2,6 +2,7 @@
 
 import {
   AddUserModal,
+  GenerateReportModal,
   NewCourseModal,
   PostAnnouncementModal,
 } from "@/components/portal/lms/AdminActionModals";
@@ -51,7 +52,8 @@ type AdminDashboardViewProps = {
   portalData: AdminPortalData;
 };
 
-type AdminModal = "user" | "course" | "announcement" | null;
+type AdminModal = "user" | "course" | "announcement" | "report" | null;
+type UserModalRole = "student" | "instructor";
 
 const navItems = [
   { icon: LayoutDashboardIcon, label: "Dashboard" },
@@ -186,7 +188,7 @@ function AdminSearchDropdown({
 
 type AdminDashboardHomeProps = {
   portalData: AdminPortalData;
-  onAddUser: () => void;
+  onAddUser: (role?: "student" | "instructor") => void;
   onNewCourse: () => void;
   onPostAnnouncement: () => void;
   onApprove: (id: string) => void;
@@ -494,21 +496,25 @@ function AdminMainContent({
   onAddUser,
   onNewCourse,
   onPostAnnouncement,
+  onGenerateReport,
   onApprove,
   onReject,
   onViewStudents,
+  onRefresh,
   approvalLoadingId,
 }: {
   active: string;
   adminName: string;
   adminId: string;
   portalData: AdminPortalData;
-  onAddUser: () => void;
+  onAddUser: (role?: "student" | "instructor") => void;
   onNewCourse: () => void;
   onPostAnnouncement: () => void;
+  onGenerateReport: () => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onViewStudents: () => void;
+  onRefresh: () => Promise<void>;
   approvalLoadingId: string | null;
 }) {
   switch (active) {
@@ -526,29 +532,59 @@ function AdminMainContent({
         />
       );
     case "Students":
-      return <AdminStudentsView students={portalData.students} />;
+      return (
+        <AdminStudentsView
+          students={portalData.students}
+          onAddStudent={() => onAddUser("student")}
+        />
+      );
     case "Instructors":
-      return <AdminInstructorsView instructors={portalData.instructors} />;
+      return (
+        <AdminInstructorsView
+          instructors={portalData.instructors}
+          onAddInstructor={() => onAddUser("instructor")}
+          onChanged={onRefresh}
+        />
+      );
     case "Courses":
-      return <AdminCoursesView courses={portalData.courses} />;
+      return (
+        <AdminCoursesView
+          courses={portalData.courses}
+          onNewCourse={onNewCourse}
+          onChanged={onRefresh}
+        />
+      );
     case "Messages":
-      return <AdminInquiriesView inquiries={portalData.inquiries} />;
+      return (
+        <AdminInquiriesView
+          inquiries={portalData.inquiries}
+          onChanged={onRefresh}
+        />
+      );
     case "Reports":
       return (
         <AdminReportsView
           reports={portalData.reports}
           enrollmentTrend={portalData.dashboard.enrollmentTrend}
           programLoad={portalData.dashboard.programLoad}
+          onGenerateReport={onGenerateReport}
         />
       );
     case "Announcements":
-      return <AdminAnnouncementsView announcements={portalData.announcements} />;
+      return (
+        <AdminAnnouncementsView
+          announcements={portalData.announcements}
+          onPostAnnouncement={onPostAnnouncement}
+          onChanged={onRefresh}
+        />
+      );
     case "Settings":
       return (
         <PortalSettingsView
           userName={adminName}
           userId={adminId}
           roleLabel="Administrator"
+          onSaved={onRefresh}
         />
       );
     default:
@@ -576,6 +612,7 @@ export default function AdminDashboardView({
   const [active, setActive] = useState("Dashboard");
   const [portalData, setPortalData] = useState(initialPortalData);
   const [modal, setModal] = useState<AdminModal>(null);
+  const [userModalRole, setUserModalRole] = useState<UserModalRole>("student");
   const [approvalLoadingId, setApprovalLoadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<AdminSearchResult | null>(null);
@@ -631,6 +668,11 @@ export default function AdminDashboardView({
     }
   }
 
+  function openUserModal(role: UserModalRole = "student") {
+    setUserModalRole(role);
+    setModal("user");
+  }
+
   function handleSearchPick(section: string) {
     setActive(section);
     setSearchQuery("");
@@ -665,18 +707,22 @@ export default function AdminDashboardView({
           adminName={adminName}
           adminId={adminId}
           portalData={portalData}
-          onAddUser={() => setModal("user")}
+          onAddUser={openUserModal}
           onNewCourse={() => setModal("course")}
           onPostAnnouncement={() => setModal("announcement")}
+          onGenerateReport={() => setModal("report")}
           onApprove={(id) => handleApproval(id, "approve")}
           onReject={(id) => handleApproval(id, "reject")}
           onViewStudents={() => setActive("Students")}
+          onRefresh={refreshPortal}
           approvalLoadingId={approvalLoadingId}
         />
       </PortalShell>
 
       {modal === "user" && (
         <AddUserModal
+          key={userModalRole}
+          defaultRole={userModalRole}
           courses={portalData.courses.map((c) => ({
             id: c.id,
             code: c.code,
@@ -698,6 +744,12 @@ export default function AdminDashboardView({
       )}
       {modal === "announcement" && (
         <PostAnnouncementModal
+          onClose={() => setModal(null)}
+          onCreated={refreshPortal}
+        />
+      )}
+      {modal === "report" && (
+        <GenerateReportModal
           onClose={() => setModal(null)}
           onCreated={refreshPortal}
         />

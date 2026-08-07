@@ -2,19 +2,47 @@
 
 import { MailIcon } from "@/components/portal/lms/icons";
 import StatCard from "@/components/portal/lms/StatCard";
-import { type AdminContactInquiry } from "@/lib/portal/admin-data";
+import {
+  getInitials,
+  type AdminContactInquiry,
+  type ContactInquiryStatus,
+} from "@/lib/portal/admin-data";
+import {
+  deleteContactInquiry,
+  patchContactInquiry,
+} from "@/lib/portal/admin-api";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import { useMemo, useState } from "react";
 
+type FilterKey = "all" | ContactInquiryStatus;
+
+const filters: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All Messages" },
+  { key: "unread", label: "Unread" },
+  { key: "read", label: "Read" },
+];
+
+const statusStyles: Record<
+  ContactInquiryStatus,
+  { bg: string; fg: string; label: string }
+> = {
+  unread: { bg: "#fbf0df", fg: lmsTokens.warn, label: "Unread" },
+  read: { bg: "#e6f2ec", fg: lmsTokens.good, label: "Read" },
+};
+
 type AdminInquiriesViewProps = {
   inquiries: AdminContactInquiry[];
+  onChanged?: () => Promise<void> | void;
 };
 
 export default function AdminInquiriesView({
   inquiries,
+  onChanged,
 }: AdminInquiriesViewProps) {
+  const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const thisWeekCount = useMemo(() => {
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -23,17 +51,57 @@ export default function AdminInquiriesView({
     ).length;
   }, [inquiries]);
 
+  const counts = useMemo(
+    () => ({
+      all: inquiries.length,
+      unread: inquiries.filter((item) => item.status === "unread").length,
+      read: inquiries.filter((item) => item.status === "read").length,
+    }),
+    [inquiries],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return inquiries;
-    return inquiries.filter(
-      (item) =>
+    return inquiries.filter((item) => {
+      const matchesFilter = filter === "all" || item.status === filter;
+      const matchesQuery =
+        !q ||
         item.name.toLowerCase().includes(q) ||
         item.email.toLowerCase().includes(q) ||
         item.subject.toLowerCase().includes(q) ||
-        item.message.toLowerCase().includes(q),
-    );
-  }, [query, inquiries]);
+        item.message.toLowerCase().includes(q);
+      return matchesFilter && matchesQuery;
+    });
+  }, [filter, query, inquiries]);
+
+  async function handleMarkStatus(
+    id: string,
+    status: ContactInquiryStatus,
+  ) {
+    setBusyId(id);
+    try {
+      await patchContactInquiry(id, status);
+      await onChanged?.();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm("Delete this message permanently?")) return;
+    setBusyId(id);
+    try {
+      await deleteContactInquiry(id);
+      if (expandedId === id) setExpandedId(null);
+      await onChanged?.();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <>
@@ -52,25 +120,38 @@ export default function AdminInquiriesView({
             className="text-xl font-semibold tracking-tight sm:text-2xl lg:text-[1.75rem]"
             style={{ color: lmsTokens.ink }}
           >
-            Messages
+            Message Management
           </h1>
           <p
             className="mt-1 text-xs sm:mt-1.5 sm:text-sm"
             style={{ color: lmsTokens.slate }}
           >
-            Contact form submissions from the website.
+            View and manage contact form submissions from the website.
           </p>
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4 lg:max-w-xl">
-        <StatCard label="Total" value={String(inquiries.length)} />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:grid-cols-4 sm:gap-4">
+        <StatCard label="Total Messages" value={String(counts.all)} />
+        <StatCard
+          label="Unread"
+          value={String(counts.unread)}
+          sub="Needs reply"
+          accent={lmsTokens.warn}
+          subPill
+        />
+        <StatCard
+          label="Read"
+          value={String(counts.read)}
+          sub="Reviewed"
+          accent={lmsTokens.good}
+          subPill
+        />
         <StatCard
           label="This week"
           value={String(thisWeekCount)}
           sub="New inquiries"
           accent={lmsTokens.gold500}
-          subPill
         />
       </div>
 
@@ -96,36 +177,88 @@ export default function AdminInquiriesView({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, email, subject..."
+            placeholder="Search by name, email, or subject..."
             className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-nlsc-gold/50 sm:max-w-xs"
             style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
           />
         </div>
 
-        <div className="flex flex-col gap-3 sm:gap-4">
-          {filtered.length === 0 ? (
-            <p
-              className="py-10 text-center text-sm"
-              style={{ color: lmsTokens.slate }}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {filters.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilter(key)}
+              className="rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
+              style={{
+                backgroundColor:
+                  filter === key ? lmsTokens.gold500 : "transparent",
+                color: filter === key ? lmsTokens.navy900 : lmsTokens.slate,
+                border: `1px solid ${filter === key ? lmsTokens.gold500 : lmsTokens.line}`,
+              }}
             >
-              {inquiries.length === 0
-                ? "No contact messages yet."
-                : "No messages match your search."}
-            </p>
-          ) : (
-            filtered.map((item) => (
-              <InquiryCard
-                key={item.id}
-                item={item}
-                expanded={expandedId === item.id}
-                onToggle={() =>
-                  setExpandedId((current) =>
-                    current === item.id ? null : item.id,
-                  )
-                }
-              />
-            ))
-          )}
+              {label} ({counts[key]})
+            </button>
+          ))}
+        </div>
+
+        <div className="-mx-1 overflow-x-auto px-1">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr
+                className="border-b text-left"
+                style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}
+              >
+                <th className="pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]">
+                  Sender
+                </th>
+                <th className="pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]">
+                  Subject
+                </th>
+                <th className="hidden pb-3 text-[10px] font-bold uppercase tracking-[0.1em] md:table-cell sm:text-[11px]">
+                  Preview
+                </th>
+                <th className="pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]">
+                  Status
+                </th>
+                <th className="hidden pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:table-cell sm:text-[11px]">
+                  Received
+                </th>
+                <th className="pb-3 w-28" />
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: lmsTokens.line }}>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="py-10 text-center text-sm"
+                    style={{ color: lmsTokens.slate }}
+                  >
+                    {inquiries.length === 0
+                      ? "No contact messages yet."
+                      : "No messages match your search."}
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((item) => (
+                  <InquiryRow
+                    key={item.id}
+                    item={item}
+                    expanded={expandedId === item.id}
+                    busy={busyId === item.id}
+                    onToggle={() =>
+                      setExpandedId((current) =>
+                        current === item.id ? null : item.id,
+                      )
+                    }
+                    onMarkStatus={handleMarkStatus}
+                    onDelete={handleDelete}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
         <div
@@ -141,92 +274,159 @@ export default function AdminInquiriesView({
   );
 }
 
-function InquiryCard({
+function InquiryStatusBadge({ status }: { status: ContactInquiryStatus }) {
+  const config = statusStyles[status];
+  return (
+    <span
+      className="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+      style={{ backgroundColor: config.bg, color: config.fg }}
+    >
+      {config.label}
+    </span>
+  );
+}
+
+function InquiryRow({
   item,
   expanded,
+  busy,
   onToggle,
+  onMarkStatus,
+  onDelete,
 }: {
   item: AdminContactInquiry;
   expanded: boolean;
+  busy: boolean;
   onToggle: () => void;
+  onMarkStatus: (id: string, status: ContactInquiryStatus) => void;
+  onDelete: (id: string) => void;
 }) {
   return (
-    <article
-      className="rounded-lg border p-4 transition-colors hover:border-nlsc-gold/35 sm:p-5"
-      style={{ borderColor: lmsTokens.line }}
-    >
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start sm:justify-between"
-      >
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+    <>
+      <tr className="transition-colors hover:bg-neutral-50/80">
+        <td className="py-3 pr-2 sm:py-3.5">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex w-full items-center gap-2.5 text-left"
+          >
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold text-white"
               style={{
-                backgroundColor: lmsTokens.gold100,
-                color: lmsTokens.navy800,
+                backgroundColor: lmsTokens.navy900,
+                borderColor: "rgb(212 175 55 / 0.35)",
               }}
             >
-              {item.subject}
-            </span>
-            <span className="text-[11px]" style={{ color: lmsTokens.slate }}>
-              {item.createdAt}
-            </span>
-          </div>
-          <h3
-            className="text-sm font-semibold sm:text-base"
-            style={{ color: lmsTokens.ink }}
+              {getInitials(item.name)}
+            </div>
+            <div className="min-w-0">
+              <div
+                className="truncate text-xs font-medium sm:text-sm"
+                style={{ color: lmsTokens.ink }}
+              >
+                {item.name}
+              </div>
+              <div
+                className="truncate text-[11px]"
+                style={{ color: lmsTokens.slate }}
+              >
+                {item.email}
+              </div>
+            </div>
+          </button>
+        </td>
+        <td className="py-3 sm:py-3.5">
+          <span
+            className="rounded px-2 py-0.5 text-[11px] font-semibold"
+            style={{
+              backgroundColor: lmsTokens.gold100,
+              color: lmsTokens.navy800,
+            }}
           >
-            {item.name}
-          </h3>
-          <p
-            className="mt-1 text-xs sm:text-sm"
-            style={{ color: lmsTokens.slate }}
-          >
-            {item.email}
-          </p>
-          <p
-            className={`mt-2 text-xs leading-relaxed sm:text-sm ${expanded ? "" : "line-clamp-2"}`}
-            style={{ color: lmsTokens.slate }}
-          >
-            {item.message}
-          </p>
-        </div>
-        <span
-          className="shrink-0 self-start text-[11px] font-semibold"
-          style={{ color: lmsTokens.gold500 }}
+            {item.subject}
+          </span>
+        </td>
+        <td
+          className="hidden max-w-[220px] truncate py-3.5 md:table-cell"
+          style={{ color: lmsTokens.slate }}
         >
-          {expanded ? "Hide" : "View"}
-        </span>
-      </button>
-
+          {item.message}
+        </td>
+        <td className="py-3 sm:py-3.5">
+          <InquiryStatusBadge status={item.status} />
+        </td>
+        <td
+          className="hidden py-3.5 text-xs sm:table-cell"
+          style={{ color: lmsTokens.slate }}
+        >
+          {item.createdAt}
+        </td>
+        <td className="py-3 text-right sm:py-3.5">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="text-[11px] font-semibold"
+            style={{ color: lmsTokens.gold500 }}
+          >
+            {expanded ? "Hide" : "View"}
+          </button>
+        </td>
+      </tr>
       {expanded && (
-        <div
-          className="mt-4 border-t pt-4"
-          style={{ borderColor: lmsTokens.line }}
-        >
-          <p
-            className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em]"
-            style={{ color: lmsTokens.gold600 }}
-          >
-            Full message
-          </p>
-          <p
-            className="whitespace-pre-wrap text-sm leading-relaxed"
-            style={{ color: lmsTokens.ink }}
-          >
-            {item.message}
-          </p>
-          <a
-            href={`mailto:${item.email}?subject=Re: ${encodeURIComponent(item.subject)}`}
-            className="mt-4 inline-flex rounded-md border border-nlsc-gold bg-nlsc-gold px-3.5 py-1.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text"
-          >
-            Reply by email
-          </a>
-        </div>
+        <tr>
+          <td colSpan={6} className="bg-nlsc-gold/5 px-4 py-4">
+            <p
+              className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: lmsTokens.gold600 }}
+            >
+              Full message
+            </p>
+            <p
+              className="whitespace-pre-wrap text-sm leading-relaxed"
+              style={{ color: lmsTokens.ink }}
+            >
+              {item.message}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a
+                href={`mailto:${item.email}?subject=${encodeURIComponent(`Re: ${item.subject}`)}`}
+                className="inline-flex rounded-md border border-nlsc-gold bg-nlsc-gold px-3.5 py-1.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text"
+              >
+                Reply by email
+              </a>
+              {item.status === "unread" ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onMarkStatus(item.id, "read")}
+                  className="rounded-md border border-nlsc-gold/35 bg-white px-3.5 py-1.5 text-xs font-semibold transition-colors hover:border-nlsc-gold/55 hover:bg-nlsc-gold/5 disabled:opacity-60"
+                  style={{ color: lmsTokens.ink }}
+                >
+                  {busy ? "..." : "Mark as read"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onMarkStatus(item.id, "unread")}
+                  className="rounded-md border border-nlsc-gold/35 bg-white px-3.5 py-1.5 text-xs font-semibold transition-colors hover:border-nlsc-gold/55 hover:bg-nlsc-gold/5 disabled:opacity-60"
+                  style={{ color: lmsTokens.ink }}
+                >
+                  {busy ? "..." : "Mark as unread"}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onDelete(item.id)}
+                className="rounded-md border border-red-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-60"
+              >
+                {busy ? "..." : "Delete"}
+              </button>
+            </div>
+          </td>
+        </tr>
       )}
-    </article>
+    </>
   );
 }

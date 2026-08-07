@@ -6,6 +6,7 @@ type CourseCardProps = {
   duration?: string;
   imageSrc?: string;
   imageAlt?: string;
+  imageFit?: "cover" | "contain";
   variant?: "course" | "image";
 };
 
@@ -15,18 +16,27 @@ export default function CourseCard({
   duration,
   imageSrc,
   imageAlt,
+  imageFit = "cover",
   variant = "course",
 }: CourseCardProps) {
   if (variant === "image") {
     return (
       <article className="nlsc-card-popup group overflow-hidden rounded-lg border border-nlsc-border bg-nlsc-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div className="relative aspect-[4/3] overflow-hidden bg-nlsc-card-placeholder">
+        <div
+          className={`relative overflow-hidden ${
+            imageFit === "contain"
+              ? "aspect-square bg-nlsc-black"
+              : "aspect-[4/3] bg-nlsc-card-placeholder"
+          }`}
+        >
           {imageSrc ? (
             <Image
               src={imageSrc}
               alt={imageAlt ?? title}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className={`transition-transform duration-500 group-hover:scale-105 ${
+                imageFit === "contain" ? "object-contain p-2" : "object-cover"
+              }`}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : null}

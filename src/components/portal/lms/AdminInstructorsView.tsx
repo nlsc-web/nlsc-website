@@ -12,7 +12,9 @@ import { lmsTokens } from "@/lib/portal/lms-tokens";
 import {
   getInitials,
   type AdminInstructor,
+  type UserStatus,
 } from "@/lib/portal/admin-data";
+import { patchAdminUserStatus } from "@/lib/portal/admin-api";
 import { useMemo, useState } from "react";
 
 type FilterKey = "all" | "active" | "pending" | "suspended";
@@ -26,13 +28,19 @@ const filters: { key: FilterKey; label: string }[] = [
 
 type AdminInstructorsViewProps = {
   instructors: AdminInstructor[];
+  onAddInstructor?: () => void;
+  onChanged?: () => Promise<void> | void;
 };
 
 export default function AdminInstructorsView({
   instructors,
+  onAddInstructor,
+  onChanged,
 }: AdminInstructorsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const counts = useMemo(
     () => ({
@@ -46,10 +54,12 @@ export default function AdminInstructorsView({
 
   const totalCourses = useMemo(
     () =>
-      instructors.filter((i) => i.status === "active").reduce(
-        (sum, i) => sum + i.courses.split("·").length,
-        0,
-      ),
+      instructors
+        .filter((i) => i.status === "active")
+        .reduce((sum, i) => {
+          if (!i.courses || i.courses === "—") return sum;
+          return sum + i.courses.split("·").length;
+        }, 0),
     [instructors],
   );
 
@@ -67,6 +77,19 @@ export default function AdminInstructorsView({
       return matchesFilter && matchesQuery;
     });
   }, [filter, query, instructors]);
+
+  async function handleStatusChange(id: string, status: UserStatus) {
+    setBusyId(id);
+    setMenuOpenId(null);
+    try {
+      await patchAdminUserStatus(id, status);
+      await onChanged?.();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <>
@@ -87,12 +110,16 @@ export default function AdminInstructorsView({
           >
             Instructor Management
           </h1>
-          <p className="mt-1 text-xs sm:mt-1.5 sm:text-sm" style={{ color: lmsTokens.slate }}>
+          <p
+            className="mt-1 text-xs sm:mt-1.5 sm:text-sm"
+            style={{ color: lmsTokens.slate }}
+          >
             Manage faculty, course assignments, and instructor access.
           </p>
         </div>
         <button
           type="button"
+          onClick={onAddInstructor}
           className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-nlsc-gold bg-nlsc-gold px-4 py-2.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text sm:flex-none"
         >
           <UserPlusIcon size={14} />
@@ -120,7 +147,6 @@ export default function AdminInstructorsView({
           label="Course Assignments"
           value={String(totalCourses)}
           sub="Active instructors"
-          accent={lmsTokens.gold500}
         />
       </div>
 
@@ -134,7 +160,10 @@ export default function AdminInstructorsView({
             All Instructors
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-              style={{ backgroundColor: lmsTokens.gold100, color: lmsTokens.navy800 }}
+              style={{
+                backgroundColor: lmsTokens.gold100,
+                color: lmsTokens.navy800,
+              }}
             >
               {filtered.length}
             </span>
@@ -169,7 +198,7 @@ export default function AdminInstructorsView({
         </div>
 
         <div className="-mx-1 overflow-x-auto px-1">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr
                 className="border-b text-left"
@@ -193,7 +222,7 @@ export default function AdminInstructorsView({
                 <th className="hidden pb-3 text-[10px] font-bold uppercase tracking-[0.1em] lg:table-cell sm:text-[11px]">
                   Joined
                 </th>
-                <th className="pb-3 w-8" />
+                <th className="pb-3 w-10" />
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: lmsTokens.line }}>
@@ -209,7 +238,18 @@ export default function AdminInstructorsView({
                 </tr>
               ) : (
                 filtered.map((instructor) => (
-                  <InstructorRow key={instructor.id} instructor={instructor} />
+                  <InstructorRow
+                    key={instructor.id}
+                    instructor={instructor}
+                    busy={busyId === instructor.id}
+                    menuOpen={menuOpenId === instructor.id}
+                    onToggleMenu={() =>
+                      setMenuOpenId((current) =>
+                        current === instructor.id ? null : instructor.id,
+                      )
+                    }
+                    onStatusChange={handleStatusChange}
+                  />
                 ))
               )}
             </tbody>
@@ -223,20 +263,28 @@ export default function AdminInstructorsView({
           <span>
             Showing {filtered.length} of {instructors.length} instructors
           </span>
-          <button
-            type="button"
-            className="flex items-center gap-1 font-semibold transition-opacity hover:opacity-80"
-            style={{ color: lmsTokens.gold500 }}
-          >
-            Export list <ChevronRightIcon size={13} />
-          </button>
+          <span className="flex items-center gap-1 font-semibold" style={{ color: lmsTokens.gold500 }}>
+            Faculty roster <ChevronRightIcon size={13} />
+          </span>
         </div>
       </section>
     </>
   );
 }
 
-function InstructorRow({ instructor }: { instructor: AdminInstructor }) {
+function InstructorRow({
+  instructor,
+  busy,
+  menuOpen,
+  onToggleMenu,
+  onStatusChange,
+}: {
+  instructor: AdminInstructor;
+  busy: boolean;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+  onStatusChange: (id: string, status: UserStatus) => void;
+}) {
   return (
     <tr className="transition-colors hover:bg-neutral-50/80">
       <td className="py-3 pr-2 sm:py-3.5">
@@ -298,14 +346,58 @@ function InstructorRow({ instructor }: { instructor: AdminInstructor }) {
       >
         {instructor.joined}
       </td>
-      <td className="py-3 text-right sm:py-3.5">
+      <td className="relative py-3 text-right sm:py-3.5">
         <button
           type="button"
-          className="rounded p-1 hover:bg-neutral-100"
+          disabled={busy}
+          onClick={onToggleMenu}
+          className="rounded p-1 hover:bg-neutral-100 disabled:opacity-60"
           aria-label={`Actions for ${instructor.name}`}
         >
-          <MoreHorizontalIcon size={16} color={lmsTokens.slate} />
+          <span className="inline-flex">
+            <MoreHorizontalIcon size={16} color={lmsTokens.slate} />
+          </span>
+          {busy && (
+            <span className="sr-only">Updating...</span>
+          )}
         </button>
+        {menuOpen && (
+          <div
+            className="absolute right-0 z-20 mt-1 w-36 rounded-lg border bg-white py-1 text-left shadow-lg"
+            style={{ borderColor: lmsTokens.line }}
+          >
+            {instructor.status !== "active" && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-nlsc-gold/5"
+                style={{ color: lmsTokens.ink }}
+                onClick={() => onStatusChange(instructor.id, "active")}
+              >
+                Activate
+              </button>
+            )}
+            {instructor.status !== "suspended" && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-nlsc-gold/5"
+                style={{ color: lmsTokens.ink }}
+                onClick={() => onStatusChange(instructor.id, "suspended")}
+              >
+                Suspend
+              </button>
+            )}
+            {instructor.status === "suspended" && (
+              <button
+                type="button"
+                className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-nlsc-gold/5"
+                style={{ color: lmsTokens.ink }}
+                onClick={() => onStatusChange(instructor.id, "pending")}
+              >
+                Set pending
+              </button>
+            )}
+          </div>
+        )}
       </td>
     </tr>
   );

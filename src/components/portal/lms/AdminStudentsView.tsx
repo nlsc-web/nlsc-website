@@ -26,9 +26,13 @@ const filters: { key: FilterKey; label: string }[] = [
 
 type AdminStudentsViewProps = {
   students: AdminStudent[];
+  onAddStudent?: () => void;
 };
 
-export default function AdminStudentsView({ students }: AdminStudentsViewProps) {
+export default function AdminStudentsView({
+  students,
+  onAddStudent,
+}: AdminStudentsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
 
@@ -81,6 +85,7 @@ export default function AdminStudentsView({ students }: AdminStudentsViewProps) 
         </div>
         <button
           type="button"
+          onClick={onAddStudent}
           className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-nlsc-gold bg-nlsc-gold px-4 py-2.5 text-xs font-semibold text-nlsc-black transition-all hover:bg-transparent hover:text-nlsc-gold-text sm:flex-none"
         >
           <UserPlusIcon size={14} />
