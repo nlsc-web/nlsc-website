@@ -149,6 +149,19 @@ export async function deleteContactInquiry(id: string) {
   return data;
 }
 
+export async function replyContactInquiry(id: string, message: string) {
+  const response = await fetch(`/api/portal/admin/inquiries/${id}/reply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to send reply.");
+  }
+  return data;
+}
+
 export async function patchAdminUserStatus(
   id: string,
   status: "active" | "pending" | "suspended",
@@ -165,6 +178,38 @@ export async function patchAdminUserStatus(
   return data;
 }
 
+export async function patchAdminUser(
+  id: string,
+  body: {
+    name: string;
+    email: string;
+    department?: string;
+    password?: string;
+  },
+) {
+  const response = await fetch(`/api/portal/admin/users/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to update user.");
+  }
+  return data;
+}
+
+export async function deleteAdminUser(id: string) {
+  const response = await fetch(`/api/portal/admin/users/${id}`, {
+    method: "DELETE",
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to delete user.");
+  }
+  return data;
+}
+
 export async function patchAdminCourseStatus(
   id: string,
   status: "draft" | "active" | "pending",
@@ -177,6 +222,17 @@ export async function patchAdminCourseStatus(
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error ?? "Unable to update course.");
+  }
+  return data;
+}
+
+export async function deleteAdminCourse(id: string) {
+  const response = await fetch(`/api/portal/admin/courses/${id}`, {
+    method: "DELETE",
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to delete course.");
   }
   return data;
 }

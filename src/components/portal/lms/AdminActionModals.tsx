@@ -1,5 +1,6 @@
 "use client";
 
+import PasswordInput from "@/components/portal/PasswordInput";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
 import { useEffect, useState } from "react";
 
@@ -92,6 +93,7 @@ function Field({
   autoComplete,
   value,
   onChange,
+  readOnly = false,
 }: {
   label: string;
   name: string;
@@ -104,9 +106,10 @@ function Field({
   autoComplete?: string;
   value?: string;
   onChange?: (value: string) => void;
+  readOnly?: boolean;
 }) {
   const className =
-    "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-nlsc-gold/50";
+    "w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-nlsc-gold/50 read-only:bg-neutral-50";
   const style = { borderColor: lmsTokens.line, color: lmsTokens.ink };
 
   return (
@@ -141,6 +144,19 @@ function Field({
           defaultValue={defaultValue}
           autoComplete={autoComplete}
         />
+      ) : type === "password" ? (
+        <PasswordInput
+          name={name}
+          required={required}
+          placeholder={placeholder}
+          inputClassName={className}
+          inputStyle={style}
+          value={value}
+          defaultValue={value === undefined ? defaultValue : undefined}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          autoComplete={autoComplete ?? "off"}
+          readOnly={readOnly}
+        />
       ) : (
         <input
           name={name}
@@ -153,6 +169,7 @@ function Field({
           defaultValue={value === undefined ? defaultValue : undefined}
           onChange={onChange ? (e) => onChange(e.target.value) : undefined}
           autoComplete={autoComplete ?? "off"}
+          readOnly={readOnly}
         />
       )}
     </label>
@@ -286,6 +303,109 @@ export function AddUserModal({
           label="Department"
           name="department"
           required={false}
+          placeholder="Accounting Faculty"
+          autoComplete="off"
+        />
+      )}
+    </AdminActionModal>
+  );
+}
+
+type EditUserModalProps = {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    department?: string;
+    role: "student" | "instructor";
+  };
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+};
+
+export function EditUserModal({ user, onClose, onSaved }: EditUserModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const form = new FormData(event.currentTarget);
+    const password = String(form.get("password") ?? "");
+
+    try {
+      const { patchAdminUser } = await import("@/lib/portal/admin-api");
+      await patchAdminUser(user.id, {
+        name: String(form.get("name") ?? "").trim(),
+        email: String(form.get("email") ?? "").trim(),
+        department:
+          user.role === "instructor"
+            ? String(form.get("department") ?? "")
+            : undefined,
+        password: password.trim() || undefined,
+      });
+      await onSaved();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to update user.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AdminActionModal
+      title={user.role === "instructor" ? "Edit Instructor" : "Edit Student"}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      loading={loading}
+      error={error}
+    >
+      <Field
+        label="User ID"
+        name="id"
+        value={user.id}
+        readOnly
+        autoComplete="off"
+      />
+      <p className="-mt-2 text-[11px]" style={{ color: lmsTokens.slate }}>
+        User ID cannot be changed.
+      </p>
+      <Field
+        label="Full Name"
+        name="name"
+        defaultValue={user.name}
+        placeholder={
+          user.role === "instructor" ? "Instructor name" : "Student name"
+        }
+        autoComplete="off"
+      />
+      <Field
+        label="Email"
+        name="email"
+        type="email"
+        defaultValue={user.email}
+        placeholder={
+          user.role === "instructor" ? "name@nlsc.lk" : "user@student.nlsc.lk"
+        }
+        autoComplete="off"
+      />
+      <Field
+        label="Password"
+        name="password"
+        type="password"
+        required={false}
+        placeholder="Leave blank to keep current password"
+        autoComplete="new-password"
+      />
+      {user.role === "instructor" && (
+        <Field
+          label="Department"
+          name="department"
+          required={false}
+          defaultValue={user.department ?? ""}
           placeholder="Accounting Faculty"
           autoComplete="off"
         />

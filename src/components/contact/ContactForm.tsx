@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
+import {
+  CAMPUS_CONTACT_LABEL,
+  CAMPUS_MAILTO,
+} from "@/lib/site-contact";
 
 const inputClassName =
   "w-full rounded-lg border border-nlsc-border bg-nlsc-surface px-4 py-3 text-sm text-nlsc-text outline-none transition-colors focus:border-nlsc-gold focus:ring-1 focus:ring-nlsc-gold/30";
-
-const CONTACT_EMAIL = "nextlevelsolutionscampus.com";
 
 type FormStatus = "idle" | "loading" | "success" | "error";
 
@@ -139,8 +141,8 @@ export default function ContactForm() {
 
       {status === "success" && (
         <p className="mt-4 rounded-lg border border-nlsc-gold/30 bg-nlsc-gold/10 px-4 py-3 text-center text-sm text-nlsc-text">
-          Thank you! Your message has been sent to{" "}
-          <span className="font-semibold text-nlsc-gold-text">{CONTACT_EMAIL}</span>.
+          Thank you! Your message has been received. Our team will get back to you
+          soon.
         </p>
       )}
 
@@ -153,10 +155,10 @@ export default function ContactForm() {
       <p className="mt-5 text-center text-xs text-nlsc-muted">
         or email us directly at{" "}
         <Link
-          href={`mailto:${CONTACT_EMAIL}`}
+          href={CAMPUS_MAILTO}
           className="font-semibold text-nlsc-gold-text hover:underline"
         >
-          {CONTACT_EMAIL}
+          {CAMPUS_CONTACT_LABEL}
         </Link>
       </p>
     </>

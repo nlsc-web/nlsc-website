@@ -1,6 +1,7 @@
 "use client";
 
 import { BellIcon, SettingsIcon } from "@/components/portal/lms/icons";
+import PasswordInput from "@/components/portal/PasswordInput";
 import {
   fetchPortalSettings,
   patchPortalSettings,
@@ -299,42 +300,39 @@ export default function PortalSettingsView({
                 <label htmlFor="current-password" className={labelClass}>
                   Current password
                 </label>
-                <input
+                <PasswordInput
                   id="current-password"
-                  type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   autoComplete="current-password"
-                  className={inputClass}
-                  style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
+                  inputClassName={inputClass}
+                  inputStyle={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
                 />
               </div>
               <div>
                 <label htmlFor="new-password" className={labelClass}>
                   New password
                 </label>
-                <input
+                <PasswordInput
                   id="new-password"
-                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
-                  className={inputClass}
-                  style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
+                  inputClassName={inputClass}
+                  inputStyle={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
                 />
               </div>
               <div>
                 <label htmlFor="confirm-password" className={labelClass}>
                   Confirm new password
                 </label>
-                <input
+                <PasswordInput
                   id="confirm-password"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
-                  className={inputClass}
-                  style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
+                  inputClassName={inputClass}
+                  inputStyle={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
                 />
               </div>
               <p className="text-xs" style={{ color: lmsTokens.slate }}>

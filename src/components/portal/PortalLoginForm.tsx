@@ -6,7 +6,12 @@ import {
   GraduationCapIcon,
   ShieldCheckIcon,
 } from "@/components/portal/lms/icons";
+import PasswordInput from "@/components/portal/PasswordInput";
 import type { PortalRole } from "@/lib/portal/session-core";
+import {
+  CAMPUS_CONTACT_LABEL,
+  CAMPUS_MAILTO,
+} from "@/lib/site-contact";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -157,10 +162,10 @@ export default function PortalLoginForm() {
               <p className="mt-10 border-t border-nlsc-border pt-6 text-center text-xs leading-relaxed text-nlsc-muted">
                 Need access? Contact{" "}
                 <a
-                  href="mailto:nextlevelsolutionscampus.com"
+                  href={CAMPUS_MAILTO}
                   className="font-semibold text-nlsc-gold-text transition-colors hover:underline"
                 >
-                  nextlevelsolutionscampus.com
+                  {CAMPUS_CONTACT_LABEL}
                 </a>
               </p>
             </>
@@ -223,15 +228,14 @@ export default function PortalLoginForm() {
                     >
                       Password
                     </label>
-                    <input
+                    <PasswordInput
                       id="password"
                       name="password"
-                      type="password"
                       autoComplete="current-password"
                       required
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
-                      className={inputClassName}
+                      inputClassName={inputClassName}
                       placeholder="Enter your password"
                     />
                   </div>

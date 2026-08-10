@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requirePortalSession } from "@/lib/portal/auth";
-import { updatePortalCourseStatus } from "@/lib/portal/services/admin-mutations";
+import {
+  deletePortalCourse,
+  updatePortalCourseStatus,
+} from "@/lib/portal/services/admin-mutations";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -43,6 +46,22 @@ export async function PATCH(request: Request, context: RouteContext) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to update course.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  const auth = await requirePortalSession("admin");
+  if (auth.error) return auth.error;
+
+  const { id } = await context.params;
+
+  try {
+    await deletePortalCourse(id);
+    return NextResponse.json({ success: true, id });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to delete course.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

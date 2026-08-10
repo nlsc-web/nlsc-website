@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import ContactForm from "@/components/contact/ContactForm";
+import {
+  CAMPUS_CONTACT_LABEL,
+  CAMPUS_MAILTO,
+} from "@/lib/site-contact";
 
 export const metadata: Metadata = {
   title: "Contact | Next Level Solutions Campus",
@@ -21,8 +25,8 @@ const contactDetails = [
   },
   {
     label: "Email",
-    value: "nextlevelsolutionscampus.com",
-    href: "mailto:nextlevelsolutionscampus.com",
+    value: CAMPUS_CONTACT_LABEL,
+    href: CAMPUS_MAILTO,
   },
   {
     label: "Office hours",

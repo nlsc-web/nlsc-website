@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
 import { prisma } from "@/lib/db";
+import { isDatabaseUnavailable } from "@/lib/portal/db-unavailable";
 
 type ContactPayload = {
   name?: string;
@@ -35,49 +35,19 @@ export async function POST(request: Request) {
       data: { name, email, subject, message },
     });
 
-    const gmailUser = process.env.GMAIL_USER;
-    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
-    const contactTo =
-      process.env.CONTACT_TO ?? "nextlevelsolutionscampus@gmail.com";
-
-    if (gmailUser && gmailAppPassword) {
-      try {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-            user: gmailUser,
-            pass: gmailAppPassword,
-          },
-        });
-
-        await transporter.sendMail({
-          from: `"Next Level Solutions Campus" <${gmailUser}>`,
-          to: contactTo,
-          replyTo: email,
-          subject: `NLSC Contact: ${subject}`,
-          text: [
-            `Name: ${name}`,
-            `Email: ${email}`,
-            `Subject: ${subject}`,
-            "",
-            message,
-          ].join("\n"),
-          html: `
-            <h2>New contact form message</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Message:</strong></p>
-            <p>${message.replace(/\n/g, "<br>")}</p>
-          `,
-        });
-      } catch (emailError) {
-        console.error("Contact email notification failed:", emailError);
-      }
-    }
-
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (isDatabaseUnavailable(error)) {
+      console.error("[contact] Database unavailable:", error);
+      return NextResponse.json(
+        {
+          error:
+            "Unable to save your message right now. Please try again in a few minutes or call us directly.",
+        },
+        { status: 503 },
+      );
+    }
+
     console.error("Contact API error:", error);
     return NextResponse.json(
       { error: "Failed to send message. Please try again later." },

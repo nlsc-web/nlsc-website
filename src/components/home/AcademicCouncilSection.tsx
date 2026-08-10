@@ -3,7 +3,7 @@ import CourseCard from "./CourseCard";
 
 const councilMembers = [
   {
-    title: "Ms. Lakmali",
+    title: "Mrs. Lakmali Maddage",
     description: "Academic Council Member",
     imageSrc: "/academic-council/ms-lakmali.png",
     imageAlt: "Ms. Lakmali — Academic Council",
@@ -15,7 +15,7 @@ const councilMembers = [
     imageAlt: "Mr. Earnest — Academic Council",
   },
   {
-    title: "Mr. Ranjith",
+    title: "Mr. Ranjith Somasiri Samaranayake",
     description: "Academic Council Member",
     imageSrc: "/academic-council/mr-ranjith.png",
     imageAlt: "Mr. Ranjith — Academic Council",

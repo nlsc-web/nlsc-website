@@ -10,11 +10,11 @@ export function getAdminPortalFallbackData(): AdminPortalData {
       stats: {
         totalStudents: 9,
         studentsThisMonth: 3,
-        totalInstructors: 6,
-        instructorsThisMonth: 1,
-        activeCourses: 2,
-        activeCoursesLabel: "ACC 4D & ACC 20D",
-        pendingApprovals: 3,
+        totalInstructors: 0,
+        instructorsThisMonth: 0,
+        activeCourses: 0,
+        activeCoursesLabel: "No active courses",
+        pendingApprovals: 2,
       },
       enrollmentTrend: [
         { month: "Mar", students: 4 },
@@ -25,10 +25,7 @@ export function getAdminPortalFallbackData(): AdminPortalData {
         { month: "Aug", students: 9 },
       ],
       enrollmentGrowthLabel: "+125% since Mar",
-      programLoad: [
-        { program: "20 Days All Inclusive Course", courses: 6 },
-        { program: "4 Days Fast Track Course", courses: 4 },
-      ],
+      programLoad: [],
       recentUsers: [
         {
           name: "Nimasha Silva",
@@ -44,13 +41,6 @@ export function getAdminPortalFallbackData(): AdminPortalData {
           status: "active",
           joined: "Jul 29",
         },
-        {
-          name: "Mr. R. Jayasuriya",
-          role: "Instructor",
-          program: "Accounting Faculty",
-          status: "pending",
-          joined: "Jul 01",
-        },
       ],
       pendingApprovals: [
         {
@@ -62,11 +52,6 @@ export function getAdminPortalFallbackData(): AdminPortalData {
           id: "apr-2",
           title: "Course material update — Taxation Module 3",
           type: "Course",
-        },
-        {
-          id: "apr-3",
-          title: "Instructor access request — R. Jayasuriya",
-          type: "Staff",
         },
       ],
       systemAnnouncements: [
@@ -109,50 +94,8 @@ export function getAdminPortalFallbackData(): AdminPortalData {
         attendance: "—",
       },
     ],
-    instructors: [
-      {
-        id: "INS-001",
-        name: "Ms. N. Perera",
-        email: "n.perera@nlsc.lk",
-        department: "Accounting Faculty",
-        courses: "ACC 4D",
-        status: "active",
-        joined: "Jan 2024",
-      },
-      {
-        id: "INS-002",
-        name: "Mr. R. Jayasuriya",
-        email: "r.jayasuriya@nlsc.lk",
-        department: "Accounting Faculty",
-        courses: "—",
-        status: "pending",
-        joined: "Jul 2026",
-      },
-    ],
-    courses: [
-      {
-        id: "fast-track-4days",
-        code: "ACC 4D",
-        title: "4 Days Fast Track Course",
-        duration: "4 Days",
-        instructor: "Ms. N. Perera",
-        enrolled: 4,
-        modules: 4,
-        status: "active",
-        updated: "Aug 02, 2026",
-      },
-      {
-        id: "all-inclusive-20days",
-        code: "ACC 20D",
-        title: "20 Days All Inclusive Course",
-        duration: "20 Days",
-        instructor: "Dr. Anil Mendis",
-        enrolled: 6,
-        modules: 5,
-        status: "active",
-        updated: "Aug 01, 2026",
-      },
-    ],
+    instructors: [],
+    courses: [],
     reports: [
       {
         id: "RPT-001",

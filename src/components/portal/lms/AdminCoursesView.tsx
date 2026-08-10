@@ -11,7 +11,10 @@ import {
   type AdminCourse,
   type CourseStatus,
 } from "@/lib/portal/admin-data";
-import { patchAdminCourseStatus } from "@/lib/portal/admin-api";
+import {
+  deleteAdminCourse,
+  patchAdminCourseStatus,
+} from "@/lib/portal/admin-api";
 import { useMemo, useState } from "react";
 
 type FilterKey = "all" | CourseStatus;
@@ -91,6 +94,19 @@ export default function AdminCoursesView({
     setMenuOpenId(null);
     try {
       await patchAdminCourseStatus(id, status);
+      await onChanged?.();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setBusyId(id);
+    setMenuOpenId(null);
+    try {
+      await deleteAdminCourse(id);
       await onChanged?.();
     } catch (error) {
       console.error(error);
@@ -260,6 +276,7 @@ export default function AdminCoursesView({
                       )
                     }
                     onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
                   />
                 ))
               )}
@@ -292,12 +309,14 @@ function CourseRow({
   menuOpen,
   onToggleMenu,
   onStatusChange,
+  onDelete,
 }: {
   course: AdminCourse;
   busy: boolean;
   menuOpen: boolean;
   onToggleMenu: () => void;
   onStatusChange: (id: string, status: CourseStatus) => void;
+  onDelete: (id: string) => void;
 }) {
   return (
     <tr className="transition-colors hover:bg-neutral-50/80">
@@ -406,6 +425,13 @@ function CourseRow({
                 Set pending
               </button>
             )}
+            <button
+              type="button"
+              className="block w-full px-3 py-2 text-left text-xs font-semibold text-red-700 hover:bg-red-50"
+              onClick={() => onDelete(course.id)}
+            >
+              Delete
+            </button>
           </div>
         )}
       </td>

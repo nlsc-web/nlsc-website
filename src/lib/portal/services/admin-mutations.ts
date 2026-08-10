@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import type { ApprovalStatus, Role } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { escapeHtml, sendMail } from "@/lib/email/send-mail";
 
 export type AdminSearchResult = {
   students: Array<{ id: string; name: string; email: string; program: string }>;
@@ -160,6 +161,91 @@ export async function updatePortalUserStatus(
   });
 }
 
+export type UpdateUserInput = {
+  name: string;
+  email: string;
+  department?: string;
+  password?: string;
+};
+
+export async function updatePortalUser(id: string, input: UpdateUserInput) {
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("User not found.");
+  }
+  if (existing.role === "admin") {
+    throw new Error("Admin accounts cannot be updated here.");
+  }
+
+  const email = input.email.trim();
+  if (!input.name.trim()) {
+    throw new Error("Name is required.");
+  }
+  if (!email) {
+    throw new Error("Email is required.");
+  }
+
+  const emailTaken = await prisma.user.findFirst({
+    where: {
+      email: { equals: email, mode: "insensitive" },
+      NOT: { id },
+    },
+  });
+  if (emailTaken) {
+    throw new Error(`Email "${input.email}" is already registered.`);
+  }
+
+  const data: {
+    name: string;
+    email: string;
+    department?: string | null;
+    passwordHash?: string;
+  } = {
+    name: input.name.trim(),
+    email,
+  };
+
+  if (existing.role === "instructor") {
+    data.department = input.department?.trim() || null;
+  }
+
+  if (input.password && input.password.trim()) {
+    if (input.password.trim().length < 6) {
+      throw new Error("Password must be at least 6 characters.");
+    }
+    data.passwordHash = await hashPassword(input.password.trim());
+  }
+
+  return prisma.user.update({
+    where: { id },
+    data,
+  });
+}
+
+export async function deletePortalUser(id: string) {
+  const existing = await prisma.user.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("User not found.");
+  }
+  if (existing.role === "admin") {
+    throw new Error("Admin accounts cannot be deleted here.");
+  }
+
+  await prisma.$transaction([
+    prisma.course.updateMany({
+      where: { instructorId: id },
+      data: { instructorId: null },
+    }),
+    prisma.announcement.updateMany({
+      where: { authorId: id },
+      data: { authorId: null },
+    }),
+    prisma.user.delete({ where: { id } }),
+  ]);
+
+  return { id };
+}
+
 export async function createPortalCourse(input: CreateCourseInput) {
   const idTaken = await prisma.course.findUnique({ where: { id: input.id } });
   if (idTaken) {
@@ -206,6 +292,16 @@ export async function updatePortalCourseStatus(
     where: { id },
     data: { status },
   });
+}
+
+export async function deletePortalCourse(id: string) {
+  const existing = await prisma.course.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Course not found.");
+  }
+
+  await prisma.course.delete({ where: { id } });
+  return { id };
 }
 
 export async function createPortalAnnouncement(
@@ -364,4 +460,44 @@ export async function deleteContactInquiry(id: string) {
 
   await prisma.contactInquiry.delete({ where: { id } });
   return { id };
+}
+
+export async function replyToContactInquiry(id: string, replyMessage: string) {
+  const inquiry = await prisma.contactInquiry.findUnique({ where: { id } });
+  if (!inquiry) {
+    throw new Error("Message not found.");
+  }
+
+  const message = replyMessage.trim();
+  if (!message) {
+    throw new Error("Reply message is required.");
+  }
+
+  const subject = `Re: ${inquiry.subject ?? "General inquiry"}`;
+  const originalBlock = [
+    "",
+    "---",
+    `Original message from ${inquiry.name} (${inquiry.email}):`,
+    inquiry.message,
+  ].join("\n");
+
+  await sendMail({
+    to: inquiry.email,
+    subject,
+    text: `${message}${originalBlock}`,
+    html: `
+      <p style="white-space:pre-wrap;font-family:sans-serif;line-height:1.5">${escapeHtml(message).replace(/\n/g, "<br>")}</p>
+      <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0" />
+      <p style="font-family:sans-serif;font-size:13px;color:#525252;line-height:1.5">
+        <strong>Original message from ${escapeHtml(inquiry.name)}</strong>
+        (${escapeHtml(inquiry.email)}):<br><br>
+        ${escapeHtml(inquiry.message).replace(/\n/g, "<br>")}
+      </p>
+    `,
+  });
+
+  return prisma.contactInquiry.update({
+    where: { id },
+    data: { status: "read" },
+  });
 }
