@@ -200,7 +200,7 @@ export default function PortalSettingsView({
               <SettingsIcon size={15} color={lmsTokens.gold500} />
               Profile
             </h2>
-            <div className="mb-5 flex items-center gap-4">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div
                 className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border text-sm font-semibold text-white"
                 style={{

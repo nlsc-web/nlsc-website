@@ -201,13 +201,13 @@ export default function StudentCoursesView({
                     }}
                   />
                 </div>
-                <div className="mt-auto flex items-center justify-between text-xs">
-                  <span style={{ color: lmsTokens.slate }}>
+                <div className="mt-auto flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0 leading-relaxed" style={{ color: lmsTokens.slate }}>
                     {course.completedModules}/{course.modules} modules · Next:{" "}
                     {course.nextSession ?? "TBA"}
                   </span>
                   <span
-                    className="flex items-center gap-0.5 font-semibold transition-opacity group-hover:opacity-80"
+                    className="flex shrink-0 items-center gap-0.5 self-end font-semibold transition-opacity group-hover:opacity-80 sm:self-auto"
                     style={{ color: lmsTokens.gold500 }}
                   >
                     Continue <ChevronRightIcon size={13} />

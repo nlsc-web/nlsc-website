@@ -23,6 +23,7 @@ import StudentCoursesView from "@/components/portal/lms/StudentCoursesView";
 import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
 import { getDashboardGreeting } from "@/lib/portal/student-data";
 import type { StudentPortalData } from "@/lib/portal/types/student-portal";
+import { STUDENT_PORTAL_PATH } from "@/lib/site-config";
 
 type StudentDashboardViewProps = {
   studentName: string;
@@ -397,7 +398,7 @@ export default function StudentDashboardView({
 
   async function handleLogout() {
     await fetch("/api/portal/logout", { method: "POST" });
-    router.push("/portal");
+    router.push(STUDENT_PORTAL_PATH);
     router.refresh();
   }
 
@@ -421,6 +422,7 @@ export default function StudentDashboardView({
           setActive("My Courses");
         }
       }}
+      showHeaderSearch={active === "Dashboard"}
       navItems={navItems}
       active={active}
       onNavigate={handleNavigate}

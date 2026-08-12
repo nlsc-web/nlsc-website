@@ -43,6 +43,7 @@ import { getInitials } from "@/lib/portal/admin-data";
 import { lmsBrandPill, lmsTokens } from "@/lib/portal/lms-tokens";
 import type { AdminSearchResult } from "@/lib/portal/services/admin-mutations";
 import type { AdminPortalData } from "@/lib/portal/types/admin-portal";
+import { ADMIN_PORTAL_PATH } from "@/lib/site-config";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -652,7 +653,7 @@ export default function AdminDashboardView({
 
   async function handleLogout() {
     await fetch("/api/portal/logout", { method: "POST" });
-    router.push("/portal");
+    router.push(ADMIN_PORTAL_PATH);
     router.refresh();
   }
 
@@ -697,6 +698,7 @@ export default function AdminDashboardView({
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         searchResults={searchDropdown}
+        showHeaderSearch={active === "Dashboard"}
         navItems={navItems}
         active={active}
         onNavigate={setActive}

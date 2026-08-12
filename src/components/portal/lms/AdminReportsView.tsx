@@ -122,7 +122,7 @@ export default function AdminReportsView({
         </button>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:mb-8 sm:grid-cols-4 sm:gap-4">
+      <div className="mb-6 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:mb-8 sm:grid-cols-4 sm:gap-4">
         <StatCard label="Total Reports" value={String(counts.all)} />
         <StatCard
           label="Enrollment"
@@ -197,7 +197,7 @@ export default function AdminReportsView({
           />
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {filters.map(({ key, label }) => (
             <button
               key={key}
@@ -216,7 +216,7 @@ export default function AdminReportsView({
           ))}
         </div>
 
-        <div className="-mx-1 overflow-x-auto px-1">
+        <div className="lms-table-scroll -mx-1 px-1">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr

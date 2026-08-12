@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/theme/ThemeToggle";
-import { PORTAL_PATH } from "@/lib/site-config";
+import { STUDENT_PORTAL_PATH } from "@/lib/site-config";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -66,7 +66,7 @@ export default function Navbar() {
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link
-            href={PORTAL_PATH}
+            href={STUDENT_PORTAL_PATH}
             className="hidden rounded-md border border-nlsc-gold bg-nlsc-gold px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-nlsc-black transition-all duration-300 hover:border-nlsc-gold hover:bg-transparent hover:text-nlsc-gold sm:inline-flex lg:px-5 lg:py-2.5 lg:text-[11px] lg:tracking-[0.16em]"
           >
             Student portal
@@ -116,7 +116,7 @@ export default function Navbar() {
               );
             })}
             <Link
-              href={PORTAL_PATH}
+              href={STUDENT_PORTAL_PATH}
               onClick={() => setMenuOpen(false)}
               className="mt-2 rounded-sm bg-nlsc-gold px-4 py-3 text-center text-sm font-bold uppercase tracking-widest text-nlsc-black"
             >

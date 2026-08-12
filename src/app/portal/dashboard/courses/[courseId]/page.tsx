@@ -5,6 +5,7 @@ import StudentCourseModules from "@/components/portal/lms/StudentCourseModules";
 import { getStudentCourseDetail } from "@/lib/portal/services/student-portal";
 import { getPortalSession } from "@/lib/portal/session";
 import { lmsTokens } from "@/lib/portal/lms-tokens";
+import { STUDENT_PORTAL_PATH } from "@/lib/site-config";
 
 type CoursePageProps = {
   params: Promise<{ courseId: string }>;
@@ -29,7 +30,7 @@ export async function generateMetadata({
 
 export default async function PortalCoursePage({ params }: CoursePageProps) {
   const session = await getPortalSession();
-  if (!session) redirect("/portal");
+  if (!session) redirect(STUDENT_PORTAL_PATH);
   if (session.role === "admin") redirect("/portal/admin/dashboard");
 
   const { courseId } = await params;

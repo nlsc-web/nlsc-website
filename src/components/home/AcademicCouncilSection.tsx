@@ -5,8 +5,8 @@ const councilMembers = [
   {
     title: "Mrs. Lakmali Maddage",
     description: "Academic Council Member",
-    imageSrc: "/academic-council/ms-lakmali.png",
-    imageAlt: "Ms. Lakmali — Academic Council",
+    imageSrc: "/academic-council/ms-lakmali-maddage.png",
+    imageAlt: "Mrs. Lakmali Maddage — Academic Council",
   },
   {
     title: "Mr. Earnest",
@@ -18,7 +18,43 @@ const councilMembers = [
     title: "Mr. Ranjith Somasiri Samaranayake",
     description: "Academic Council Member",
     imageSrc: "/academic-council/mr-ranjith.png",
-    imageAlt: "Mr. Ranjith — Academic Council",
+    imageAlt: "Mr. Ranjith Somasiri Samaranayake — Academic Council",
+  },
+  {
+    title: "Mrs. Nadeeka Jeewanthi",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/ms-nadeeka.png",
+    imageAlt: "Mrs. Nadeeka Jeewanthi — Academic Council",
+  },
+  {
+    title: "Dr. Upul Piyawi Wijewardhena",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/mr-piyavi.png",
+    imageAlt: "Dr. Upul Piyawi Wijewardhena — Academic Council",
+  },
+  {
+    title: "Mr. Nuwan Gamage",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/mr-nuwan.png",
+    imageAlt: "Mr. Nuwan Gamage — Academic Council",
+  },
+  {
+    title: "Mrs. Chamini Thushari",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/ms-chamini.png",
+    imageAlt: "Mrs. Chamini Thushari — Academic Council",
+  },
+  {
+    title: "Mr. Isuru Rathnayake",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/mr-isuru.png",
+    imageAlt: "Mr. Isuru Rathnayake — Academic Council",
+  },
+  {
+    title: "Ms. Sajini Welvidana",
+    description: "Academic Council Member",
+    imageSrc: "/academic-council/ms-sajini.png",
+    imageAlt: "Ms. Sajini Welvidana — Academic Council",
   },
 ];
 

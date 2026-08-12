@@ -113,13 +113,18 @@ body {
 
 .lms-panel-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgb(212 175 55 / 0.18);
   border-radius: 0.625rem;
   background: #fff;
   box-shadow:
     0 1px 2px rgb(10 10 10 / 0.03),
     0 4px 16px rgb(10 10 10 / 0.04);
+}
+
+.lms-table-scroll {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
 }
 
 .lms-panel-card::before {

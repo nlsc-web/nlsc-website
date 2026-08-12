@@ -94,7 +94,7 @@ export default function StudentAttendanceView({
         </div>
       </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:grid-cols-4">
         <StatCard
           label="Overall Attendance"
           value={`${overall}%`}
@@ -143,7 +143,7 @@ export default function StudentAttendanceView({
           }
         />
 
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {filters.map(({ key, label }) => (
             <button
               key={key}

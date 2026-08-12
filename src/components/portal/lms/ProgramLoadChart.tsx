@@ -17,7 +17,9 @@ export default function ProgramLoadChart({ data, compact = false }: ProgramLoadC
               compact ? "text-[11px] lg:text-xs" : "text-xs lg:text-sm"
             }`}
           >
-            <span style={{ color: lmsTokens.ink }}>{item.program}</span>
+            <span className="min-w-0 truncate" style={{ color: lmsTokens.ink }}>
+              {item.program}
+            </span>
             <span className="font-semibold" style={{ color: lmsTokens.slate }}>
               {item.courses}
             </span>

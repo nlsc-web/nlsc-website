@@ -190,7 +190,7 @@ export default function EnrollmentTrendChart({ data }: EnrollmentTrendChartProps
 
         {active && (
           <div
-            className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1 rounded-md border bg-white px-3 py-2 text-center shadow-md"
+            className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 rounded-md border bg-white px-3 py-2 text-center shadow-md sm:top-0 sm:-translate-y-1"
             style={{ borderColor: lmsTokens.line }}
           >
             <p

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PortalBrandPanel } from "@/components/portal/lms/PortalShell";
 import {
   ArrowRightIcon,
@@ -30,11 +31,11 @@ function PortalPanelHeader({
   subtitle?: string;
 }) {
   return (
-    <div className="mb-10 border-l-2 border-nlsc-gold pl-6">
-      <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-nlsc-gold-text">
+    <div className="mb-10 border-l-2 border-nlsc-gold pl-4 sm:pl-6">
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-nlsc-gold-text sm:mb-3">
         {eyebrow}
       </p>
-      <h2 className="text-2xl font-bold tracking-tight text-nlsc-text sm:text-3xl">
+      <h2 className="text-xl font-bold tracking-tight text-nlsc-text sm:text-2xl lg:text-3xl">
         {title}
       </h2>
       <div className="mt-4 h-px w-10 bg-nlsc-gold/50" />
@@ -77,10 +78,15 @@ function RoleCard({
   );
 }
 
-export default function PortalLoginForm() {
+type PortalLoginFormProps = {
+  /** When set, skip portal selection and show only this login form. */
+  mode?: "student" | "admin";
+};
+
+export default function PortalLoginForm({ mode }: PortalLoginFormProps = {}) {
   const router = useRouter();
-  const [step, setStep] = useState<PortalStep>("select");
-  const [role, setRole] = useState<PortalRole>("student");
+  const [step, setStep] = useState<PortalStep>(mode ? "login" : "select");
+  const [role, setRole] = useState<PortalRole>(mode ?? "student");
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -133,7 +139,7 @@ export default function PortalLoginForm() {
     <div className="flex min-h-screen w-full flex-col bg-nlsc-body-bg lg:flex-row lg:min-h-0 lg:h-screen lg:overflow-hidden">
       <PortalBrandPanel />
 
-      <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14 lg:px-12 lg:py-20">
+      <div className="relative flex flex-1 items-start justify-center overflow-y-auto px-4 py-6 sm:items-center sm:px-6 sm:py-10 lg:px-12 lg:py-20">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_85%_15%,rgba(212,175,55,0.07),transparent_45%)]" />
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-nlsc-gold/0 via-nlsc-gold/25 to-nlsc-gold/0 lg:hidden" />
 
@@ -171,16 +177,28 @@ export default function PortalLoginForm() {
             </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => setStep("select")}
-                className="mb-8 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-nlsc-gold-text transition-colors hover:text-nlsc-text"
-              >
-                <span aria-hidden className="text-base leading-none">
-                  ←
-                </span>
-                Back to portal selection
-              </button>
+              {mode ? (
+                <Link
+                  href="/"
+                  className="mb-8 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-nlsc-gold-text transition-colors hover:text-nlsc-text"
+                >
+                  <span aria-hidden className="text-base leading-none">
+                    ←
+                  </span>
+                  Back to website
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setStep("select")}
+                  className="mb-8 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-nlsc-gold-text transition-colors hover:text-nlsc-text"
+                >
+                  <span aria-hidden className="text-base leading-none">
+                    ←
+                  </span>
+                  Back to portal selection
+                </button>
+              )}
 
               <PortalPanelHeader
                 eyebrow={isAdmin ? "Admin Portal" : "Student Portal"}

@@ -30,15 +30,15 @@ export function AdminActionModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
       <div
-        className="w-full max-w-md rounded-xl border bg-white p-5 shadow-xl"
+        className="flex max-h-[92dvh] w-full flex-col rounded-t-2xl border bg-white shadow-xl sm:max-h-[90dvh] sm:max-w-md sm:rounded-xl"
         style={{ borderColor: lmsTokens.line }}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b px-4 py-4 sm:px-5" style={{ borderColor: lmsTokens.line }}>
           <h2 className="text-lg font-semibold" style={{ color: lmsTokens.ink }}>
             {title}
           </h2>
@@ -51,18 +51,20 @@ export function AdminActionModal({
             Close
           </button>
         </div>
-        <form onSubmit={onSubmit} className="space-y-3">
-          {children}
-          {error && (
-            <p className="text-sm" style={{ color: lmsTokens.bad }}>
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 pt-2">
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5">
+            {children}
+            {error && (
+              <p className="text-sm" style={{ color: lmsTokens.bad }}>
+                {error}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t px-4 py-4 sm:flex-row sm:justify-end sm:px-5" style={{ borderColor: lmsTokens.line }}>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border px-4 py-2 text-sm font-semibold"
+              className="rounded-lg border px-4 py-2.5 text-sm font-semibold sm:py-2"
               style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
             >
               Cancel
@@ -70,7 +72,7 @@ export function AdminActionModal({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg border border-nlsc-gold bg-nlsc-gold px-4 py-2 text-sm font-semibold text-nlsc-black disabled:opacity-60"
+              className="rounded-lg border border-nlsc-gold bg-nlsc-gold px-4 py-2.5 text-sm font-semibold text-nlsc-black disabled:opacity-60 sm:py-2"
             >
               {loading ? "Saving..." : "Save"}
             </button>

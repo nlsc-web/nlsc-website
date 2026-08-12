@@ -35,11 +35,17 @@ export default function CourseCard({
               alt={imageAlt ?? title}
               fill
               className={`transition-transform duration-500 group-hover:scale-105 ${
-                imageFit === "contain" ? "object-contain p-2" : "object-cover"
+                imageFit === "contain" ? "object-contain" : "object-cover"
               }`}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-          ) : null}
+          ) : (
+            <div className="flex h-full items-center justify-center bg-nlsc-card-placeholder">
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-nlsc-muted">
+                Photo
+              </span>
+            </div>
+          )}
         </div>
         <div className="border-t border-nlsc-border p-5">
           <p className="font-semibold text-nlsc-text">{title}</p>

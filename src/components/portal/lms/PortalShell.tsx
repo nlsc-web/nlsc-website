@@ -192,60 +192,66 @@ export default function PortalShell({
       style={{ backgroundColor: lmsTokens.bg }}
     >
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col justify-between transition-transform duration-200 lg:static ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${fitViewport ? "lg:h-full lg:min-h-0" : ""}`}
+        className={`fixed inset-y-0 left-0 z-30 flex w-[min(100vw-3rem,16rem)] max-w-[16rem] flex-col transition-transform duration-200 lg:static lg:w-64 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 ${fitViewport ? "lg:h-full lg:min-h-0" : ""}`}
       >
-        <div className="nlsc-brand-surface relative flex h-full flex-col justify-between">
+        <div className="nlsc-brand-surface relative flex h-full min-h-0 flex-col">
           <div
             className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-nlsc-gold/60 to-transparent"
             aria-hidden
           />
 
-          <div>
-            <div className="flex items-center gap-2 border-b border-white/8 px-4 py-4 sm:px-5">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Image
-                  src="/nlsc-logo.png"
-                  alt="NLSC"
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 shrink-0 object-contain"
-                />
-                <div className="min-w-0">
-                  <span className="block text-sm font-semibold leading-tight text-white sm:text-base">
-                    NLSC LMS
-                  </span>
-                  <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-nlsc-gold/90">
-                    {roleLabel === "Administrator" ? "Admin Portal" : "Student Portal"}
-                  </span>
-                </div>
+          <div className="flex shrink-0 items-center gap-2 border-b border-white/8 px-4 py-4 sm:px-5">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Image
+                src="/nlsc-logo.png"
+                alt="NLSC"
+                width={40}
+                height={40}
+                className="h-10 w-10 shrink-0 object-contain"
+              />
+              <div className="min-w-0">
+                <span className="block text-sm font-semibold leading-tight text-white sm:text-base">
+                  NLSC LMS
+                </span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-nlsc-gold/90">
+                  {roleLabel === "Administrator" ? "Admin Portal" : "Student Portal"}
+                </span>
               </div>
-              <button
-                type="button"
-                className="shrink-0 text-white/60 lg:hidden"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Close menu"
-              >
-                <CloseIcon size={20} />
-              </button>
             </div>
-
-            <nav className="flex flex-col gap-0.5 px-3 py-4">
-              {navItems.map((item) => (
-                <NavItem
-                  key={item.label}
-                  icon={item.icon}
-                  label={item.label}
-                  active={active === item.label}
-                  onClick={() => {
-                    onNavigate(item.label);
-                    setMobileOpen(false);
-                  }}
-                />
-              ))}
-            </nav>
+            <button
+              type="button"
+              className="shrink-0 text-white/60 lg:hidden"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close menu"
+            >
+              <CloseIcon size={20} />
+            </button>
           </div>
 
-          <div className="px-3 pb-5">
+          <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-4">
+            {navItems.map((item) => (
+              <NavItem
+                key={item.label}
+                icon={item.icon}
+                label={item.label}
+                active={active === item.label}
+                onClick={() => {
+                  onNavigate(item.label);
+                  setMobileOpen(false);
+                }}
+              />
+            ))}
+          </nav>
+
+          <div className="shrink-0 border-t border-white/8 px-3 py-4 lg:hidden">
+            <LogOutButton
+              variant="sidebar"
+              onClick={handleLogout}
+              loading={loggingOut}
+            />
+          </div>
+
+          <div className="hidden shrink-0 px-3 pb-5 lg:block">
             <p className="px-1 text-center text-[10px] text-white/35">
               Signed in as <span className="font-mono text-white/50">{userId}</span>
             </p>
@@ -266,10 +272,10 @@ export default function PortalShell({
         className={`flex min-w-0 flex-1 flex-col ${fitViewport ? "lg:min-h-0 lg:overflow-hidden" : ""}`}
       >
         <header
-          className={`relative grid shrink-0 items-center gap-3 border-b bg-white px-4 py-3 sm:px-5 lg:px-6 ${
+          className={`relative grid shrink-0 items-center gap-2 border-b bg-white px-3 py-2.5 sm:gap-3 sm:px-5 sm:py-3 lg:px-6 ${
             showHeaderSearch
-              ? "grid-cols-[auto_1fr_auto] lg:h-[3.75rem]"
-              : "grid-cols-[auto_1fr] lg:flex lg:h-14 lg:justify-end lg:px-6"
+              ? "grid-cols-[auto_minmax(0,1fr)_auto] md:grid-cols-[auto_1fr_auto] lg:h-[3.75rem]"
+              : "grid-cols-[auto_1fr_auto] lg:h-14"
           }`}
           style={{ borderColor: lmsTokens.line }}
         >
@@ -289,11 +295,11 @@ export default function PortalShell({
             </button>
           </div>
 
-          <div className="flex min-w-0 justify-center px-1 sm:px-3">
+          <div className="flex min-w-0 justify-end px-0 sm:justify-center sm:px-1 md:px-3">
             {showHeaderSearch && (
               <PortalHeaderSearch
                 placeholder={searchPlaceholder}
-                className="hidden max-w-md md:flex lg:max-w-xl"
+                className="hidden w-full max-w-md md:flex lg:max-w-xl"
                 value={searchValue}
                 onChange={onSearchChange}
                 results={searchResults}
@@ -301,7 +307,7 @@ export default function PortalShell({
             )}
           </div>
 
-          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+          <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2 md:gap-3">
             <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
               <div
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold text-white sm:h-9 sm:w-9"
@@ -312,7 +318,7 @@ export default function PortalShell({
               >
                 {getInitials(userName)}
               </div>
-              <div className="hidden min-w-0 leading-tight md:block">
+              <div className="hidden min-w-0 leading-tight lg:block">
                 <div
                   className="truncate text-sm font-semibold"
                   style={{ color: lmsTokens.ink, maxWidth: "11rem" }}
@@ -337,7 +343,7 @@ export default function PortalShell({
 
         {showHeaderSearch && (
           <div
-            className="border-b bg-white px-4 py-3 md:hidden"
+            className="relative border-b bg-white px-3 py-2.5 sm:px-4 sm:py-3 md:hidden"
             style={{ borderColor: lmsTokens.line }}
           >
             <PortalHeaderSearch
@@ -350,10 +356,10 @@ export default function PortalShell({
         )}
 
         <main
-          className={`flex-1 p-4 sm:p-5 lg:p-6 ${
+          className={`flex-1 p-3 sm:p-5 lg:p-6 ${
             fitViewport
               ? "overflow-y-auto lg:flex lg:min-h-0 lg:flex-col lg:overflow-hidden lg:p-5"
-              : "overflow-y-auto lg:p-8"
+              : "overflow-y-auto overflow-x-hidden lg:p-8"
           }`}
         >
           {children}
@@ -365,7 +371,7 @@ export default function PortalShell({
 
 export function PortalBrandPanel() {
   return (
-    <div className="relative flex w-full shrink-0 flex-col justify-between overflow-hidden px-5 py-8 sm:px-8 sm:py-10 lg:w-[42%] lg:px-12 lg:py-16">
+    <div className="relative flex w-full shrink-0 flex-col justify-between overflow-hidden px-5 py-6 sm:px-8 sm:py-8 lg:w-[42%] lg:px-12 lg:py-16">
       <div className="nlsc-brand-surface absolute inset-0" aria-hidden />
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-nlsc-gold/70 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_80%,rgba(212,175,55,0.1),transparent_55%)]" />
@@ -384,11 +390,11 @@ export function PortalBrandPanel() {
         </span>
       </div>
 
-      <div className="relative my-6 max-w-md border-l border-nlsc-gold pl-5 sm:my-0 sm:pl-8 lg:my-auto">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-nlsc-gold sm:mb-4 sm:text-[11px] sm:tracking-[0.22em]">
+      <div className="relative my-4 max-w-md border-l border-nlsc-gold pl-4 sm:my-6 sm:pl-5 lg:my-auto lg:pl-8">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-nlsc-gold sm:mb-3 sm:text-[11px] sm:tracking-[0.22em]">
           Learning Management System
         </p>
-        <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl xl:text-[2.75rem]">
+        <h1 className="text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl lg:text-4xl xl:text-[2.75rem]">
           Build your accounting
           <span className="hidden sm:inline">
             <br />

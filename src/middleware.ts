@@ -5,6 +5,7 @@ import {
   verifyPortalSessionToken,
   type PortalRole,
 } from "@/lib/portal/session-core";
+import { ADMIN_PORTAL_PATH, STUDENT_PORTAL_PATH } from "@/lib/site-config";
 
 function getSessionRole(session: { role?: PortalRole }): PortalRole {
   return session.role === "admin" ? "admin" : "student";
@@ -14,7 +15,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isStudentArea = pathname.startsWith("/portal/dashboard");
-  const isAdminArea = pathname.startsWith("/portal/admin");
+  const isAdminArea = pathname.startsWith("/portal/admin/dashboard");
 
   if (!isStudentArea && !isAdminArea) {
     return NextResponse.next();
@@ -24,7 +25,8 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifyPortalSessionToken(token) : null;
 
   if (!session) {
-    return NextResponse.redirect(new URL("/portal", request.url));
+    const loginPath = isAdminArea ? ADMIN_PORTAL_PATH : STUDENT_PORTAL_PATH;
+    return NextResponse.redirect(new URL(loginPath, request.url));
   }
 
   const role = getSessionRole(session);
@@ -41,5 +43,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/portal/dashboard/:path*", "/portal/admin/:path*"],
+  matcher: ["/portal/dashboard/:path*", "/portal/admin/dashboard/:path*"],
 };
