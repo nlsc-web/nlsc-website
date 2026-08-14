@@ -40,8 +40,8 @@ yarn-error.log*
 /prisma/*.db
 /prisma/*.db-journal
 
-# vercel
-.vercel
+/public/uploads/modules/*
+!/public/uploads/modules/.gitkeep
 
 # typescript
 *.tsbuildinfo

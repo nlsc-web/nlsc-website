@@ -337,6 +337,98 @@ export async function deletePortalCourse(id: string) {
   return { id };
 }
 
+export type CourseModuleInput = {
+  title: string;
+  duration: string;
+  type: "video" | "document" | "quiz";
+};
+
+export async function listCourseModules(courseId: string) {
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  return prisma.courseModule.findMany({
+    where: { courseId },
+    orderBy: { sortOrder: "asc" },
+  });
+}
+
+export async function createCourseModule(
+  courseId: string,
+  input: CourseModuleInput,
+) {
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  const title = input.title.trim();
+  const duration = input.duration.trim();
+  if (!title || !duration) {
+    throw new Error("Module title and duration are required.");
+  }
+  if (
+    input.type !== "video" &&
+    input.type !== "document" &&
+    input.type !== "quiz"
+  ) {
+    throw new Error('Module type must be "video", "document", or "quiz".');
+  }
+
+  const last = await prisma.courseModule.findFirst({
+    where: { courseId },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+  const sortOrder = (last?.sortOrder ?? 0) + 1;
+  const id = `${courseId}-m${sortOrder}-${Date.now().toString().slice(-4)}`;
+
+  return prisma.courseModule.create({
+    data: {
+      id,
+      courseId,
+      title,
+      duration,
+      type: input.type,
+      sortOrder,
+    },
+  });
+}
+
+export async function deleteCourseModule(moduleId: string) {
+  const existing = await prisma.courseModule.findUnique({
+    where: { id: moduleId },
+  });
+  if (!existing) {
+    throw new Error("Module not found.");
+  }
+
+  await prisma.courseModule.delete({ where: { id: moduleId } });
+  return { id: moduleId, courseId: existing.courseId };
+}
+
+export async function setCourseModuleVideoUrl(
+  moduleId: string,
+  videoUrl: string | null,
+) {
+  const existing = await prisma.courseModule.findUnique({
+    where: { id: moduleId },
+  });
+  if (!existing) {
+    throw new Error("Module not found.");
+  }
+
+  const normalized =
+    videoUrl && videoUrl.trim().length > 0 ? videoUrl.trim() : null;
+
+  return prisma.courseModule.update({
+    where: { id: moduleId },
+    data: { videoUrl: normalized },
+  });
+}
+
 export async function createPortalAnnouncement(
   input: CreateAnnouncementInput,
   authorId: string,

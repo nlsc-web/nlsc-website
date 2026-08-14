@@ -253,6 +253,102 @@ export async function deleteAdminCourse(id: string) {
   return data;
 }
 
+export type AdminCourseModule = {
+  id: string;
+  title: string;
+  duration: string;
+  type: "video" | "document" | "quiz";
+  sortOrder: number;
+  videoUrl: string | null;
+};
+
+export async function fetchAdminCourseModules(
+  courseId: string,
+): Promise<AdminCourseModule[]> {
+  const response = await fetch(`/api/portal/admin/courses/${courseId}/modules`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to load modules.");
+  }
+  return (data.modules ?? []) as AdminCourseModule[];
+}
+
+export async function postAdminCourseModule(
+  courseId: string,
+  body: {
+    title: string;
+    duration: string;
+    type: "video" | "document" | "quiz";
+  },
+) {
+  const response = await fetch(`/api/portal/admin/courses/${courseId}/modules`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to create module.");
+  }
+  return data;
+}
+
+export async function deleteAdminCourseModule(
+  courseId: string,
+  moduleId: string,
+) {
+  const response = await fetch(
+    `/api/portal/admin/courses/${courseId}/modules/${moduleId}`,
+    { method: "DELETE" },
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to delete module.");
+  }
+  return data;
+}
+
+export async function patchAdminCourseModuleVideoUrl(
+  courseId: string,
+  moduleId: string,
+  videoUrl: string | null,
+) {
+  const response = await fetch(
+    `/api/portal/admin/courses/${courseId}/modules/${moduleId}/video`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoUrl }),
+    },
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to save video URL.");
+  }
+  return data;
+}
+
+export async function uploadAdminCourseModuleVideo(
+  courseId: string,
+  moduleId: string,
+  file: File,
+) {
+  const formData = new FormData();
+  formData.append("video", file);
+  const response = await fetch(
+    `/api/portal/admin/courses/${courseId}/modules/${moduleId}/video`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to upload video.");
+  }
+  return data;
+}
+
 export async function postAdminReport(body: {
   title: string;
   category: "enrollment" | "attendance" | "performance" | "financial";

@@ -613,6 +613,335 @@ export function NewCourseModal({
   );
 }
 
+type ManageModulesModalProps = {
+  course: { id: string; title: string };
+  onClose: () => void;
+  onChanged: () => Promise<void> | void;
+};
+
+export function ManageModulesModal({
+  course,
+  onClose,
+  onChanged,
+}: ManageModulesModalProps) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busyModuleId, setBusyModuleId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [modules, setModules] = useState<
+    Array<{
+      id: string;
+      title: string;
+      duration: string;
+      type: "video" | "document" | "quiz";
+      videoUrl: string | null;
+    }>
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const { fetchAdminCourseModules } = await import(
+          "@/lib/portal/admin-api"
+        );
+        const rows = await fetchAdminCourseModules(course.id);
+        if (!cancelled) {
+          setModules(
+            rows.map((row) => ({
+              ...row,
+              videoUrl: row.videoUrl ?? null,
+            })),
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Unable to load modules.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [course.id]);
+
+  async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+
+    try {
+      const { postAdminCourseModule } = await import("@/lib/portal/admin-api");
+      const result = await postAdminCourseModule(course.id, {
+        title: String(data.get("title") ?? "").trim(),
+        duration: String(data.get("duration") ?? "").trim(),
+        type: String(data.get("type") ?? "video") as
+          | "video"
+          | "document"
+          | "quiz",
+      });
+      setModules((current) => [
+        ...current,
+        {
+          ...result.module,
+          videoUrl: result.module.videoUrl ?? null,
+        },
+      ]);
+      form.reset();
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to add module.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(moduleId: string) {
+    if (!window.confirm("Delete this module?")) return;
+    setError(null);
+    try {
+      const { deleteAdminCourseModule } = await import("@/lib/portal/admin-api");
+      await deleteAdminCourseModule(course.id, moduleId);
+      setModules((current) => current.filter((item) => item.id !== moduleId));
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to delete module.");
+    }
+  }
+
+  async function handleSaveVideoUrl(moduleId: string, videoUrl: string) {
+    setBusyModuleId(moduleId);
+    setError(null);
+    try {
+      const { patchAdminCourseModuleVideoUrl } = await import(
+        "@/lib/portal/admin-api"
+      );
+      const result = await patchAdminCourseModuleVideoUrl(
+        course.id,
+        moduleId,
+        videoUrl.trim() || null,
+      );
+      setModules((current) =>
+        current.map((item) =>
+          item.id === moduleId
+            ? { ...item, videoUrl: result.module.videoUrl ?? null }
+            : item,
+        ),
+      );
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save video URL.");
+    } finally {
+      setBusyModuleId(null);
+    }
+  }
+
+  async function handleUploadVideo(moduleId: string, file: File | null) {
+    if (!file) return;
+    setBusyModuleId(moduleId);
+    setError(null);
+    try {
+      const { uploadAdminCourseModuleVideo } = await import(
+        "@/lib/portal/admin-api"
+      );
+      const result = await uploadAdminCourseModuleVideo(
+        course.id,
+        moduleId,
+        file,
+      );
+      setModules((current) =>
+        current.map((item) =>
+          item.id === moduleId
+            ? { ...item, videoUrl: result.module.videoUrl ?? null }
+            : item,
+        ),
+      );
+      await onChanged();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to upload video.");
+    } finally {
+      setBusyModuleId(null);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-white p-5 shadow-xl"
+        style={{ borderColor: lmsTokens.line }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Manage modules"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold" style={{ color: lmsTokens.ink }}>
+              Manage modules
+            </h2>
+            <p className="mt-0.5 text-xs" style={{ color: lmsTokens.slate }}>
+              {course.title}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md px-2 py-1 text-sm transition-colors hover:bg-neutral-100"
+            style={{ color: lmsTokens.slate }}
+          >
+            Close
+          </button>
+        </div>
+
+        {error && (
+          <p className="mb-3 text-xs font-semibold" style={{ color: lmsTokens.bad }}>
+            {error}
+          </p>
+        )}
+
+        <div className="mb-4 max-h-72 space-y-3 overflow-y-auto">
+          {loading ? (
+            <p className="text-xs" style={{ color: lmsTokens.slate }}>
+              Loading modules...
+            </p>
+          ) : modules.length === 0 ? (
+            <p className="text-xs" style={{ color: lmsTokens.slate }}>
+              No modules yet. Add the first module below.
+            </p>
+          ) : (
+            modules.map((module, index) => (
+              <div
+                key={module.id}
+                className="space-y-2 rounded-lg border px-3 py-2"
+                style={{ borderColor: lmsTokens.line }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-wider"
+                      style={{ color: lmsTokens.slate }}
+                    >
+                      Module {index + 1} · {module.type}
+                      {module.videoUrl ? " · Video ready" : ""}
+                    </p>
+                    <p
+                      className="truncate text-sm font-medium"
+                      style={{ color: lmsTokens.ink }}
+                    >
+                      {module.title}
+                    </p>
+                    <p className="text-xs" style={{ color: lmsTokens.slate }}>
+                      {module.duration}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(module.id)}
+                    className="shrink-0 text-xs font-semibold text-red-700 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                {module.type === "video" && (
+                  <div className="space-y-2 border-t pt-2" style={{ borderColor: lmsTokens.line }}>
+                    <label className="block text-[11px] font-semibold" style={{ color: lmsTokens.slate }}>
+                      Video URL (YouTube / MP4 link)
+                      <input
+                        type="url"
+                        defaultValue={module.videoUrl?.startsWith("/uploads/") ? "" : module.videoUrl ?? ""}
+                        placeholder="https://..."
+                        className="mt-1 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-nlsc-gold/50"
+                        style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
+                        onBlur={(event) => {
+                          const next = event.target.value.trim();
+                          const current =
+                            module.videoUrl?.startsWith("/uploads/")
+                              ? ""
+                              : module.videoUrl ?? "";
+                          if (next !== current) {
+                            void handleSaveVideoUrl(module.id, next);
+                          }
+                        }}
+                      />
+                    </label>
+                    <label className="block text-[11px] font-semibold" style={{ color: lmsTokens.slate }}>
+                      Or upload recording (MP4 / WebM, max 80MB)
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                        disabled={busyModuleId === module.id}
+                        className="mt-1 block w-full text-xs"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          void handleUploadVideo(module.id, file);
+                          event.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {module.videoUrl && (
+                      <p className="truncate text-[11px]" style={{ color: lmsTokens.good }}>
+                        Saved: {module.videoUrl}
+                      </p>
+                    )}
+                    {busyModuleId === module.id && (
+                      <p className="text-[11px]" style={{ color: lmsTokens.slate }}>
+                        Saving video...
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        <form onSubmit={handleAdd} className="space-y-3 border-t pt-4" style={{ borderColor: lmsTokens.line }}>
+          <p className="text-xs font-semibold" style={{ color: lmsTokens.ink }}>
+            Add module
+          </p>
+          <Field label="Title" name="title" placeholder="Module title" />
+          <Field label="Duration" name="duration" placeholder="45 min" />
+          <Field
+            label="Type"
+            name="type"
+            as="select"
+            defaultValue="video"
+            options={[
+              { value: "video", label: "Video lesson" },
+              { value: "document", label: "Document" },
+              { value: "quiz", label: "Assessment" },
+            ]}
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border px-4 py-2 text-xs font-semibold"
+              style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
+            >
+              Done
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-nlsc-gold px-4 py-2 text-xs font-semibold text-nlsc-black disabled:opacity-60"
+            >
+              {saving ? "Adding..." : "Add module"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 type PostAnnouncementModalProps = {
   onClose: () => void;
   onCreated: () => Promise<void>;

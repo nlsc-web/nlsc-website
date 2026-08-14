@@ -1,5 +1,6 @@
 "use client";
 
+import { ManageModulesModal } from "@/components/portal/lms/AdminActionModals";
 import {
   ChevronRightIcon,
   FolderKanbanIcon,
@@ -60,6 +61,9 @@ export default function AdminCoursesView({
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [managingModules, setManagingModules] = useState<AdminCourse | null>(
+    null,
+  );
 
   const counts = useMemo(
     () => ({
@@ -117,6 +121,15 @@ export default function AdminCoursesView({
 
   return (
     <>
+      {managingModules && (
+        <ManageModulesModal
+          course={{ id: managingModules.id, title: managingModules.title }}
+          onClose={() => setManagingModules(null)}
+          onChanged={async () => {
+            await onChanged?.();
+          }}
+        />
+      )}
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div
           className="border-l-2 pl-4 sm:pl-5"
@@ -277,6 +290,10 @@ export default function AdminCoursesView({
                     }
                     onStatusChange={handleStatusChange}
                     onDelete={handleDelete}
+                    onManageModules={() => {
+                      setMenuOpenId(null);
+                      setManagingModules(course);
+                    }}
                   />
                 ))
               )}
@@ -310,6 +327,7 @@ function CourseRow({
   onToggleMenu,
   onStatusChange,
   onDelete,
+  onManageModules,
 }: {
   course: AdminCourse;
   busy: boolean;
@@ -317,6 +335,7 @@ function CourseRow({
   onToggleMenu: () => void;
   onStatusChange: (id: string, status: CourseStatus) => void;
   onDelete: (id: string) => void;
+  onManageModules: () => void;
 }) {
   return (
     <tr className="transition-colors hover:bg-neutral-50/80">
@@ -425,6 +444,14 @@ function CourseRow({
                 Set pending
               </button>
             )}
+            <button
+              type="button"
+              className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-nlsc-gold/5"
+              style={{ color: lmsTokens.ink }}
+              onClick={onManageModules}
+            >
+              Manage modules
+            </button>
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-xs font-semibold text-red-700 hover:bg-red-50"

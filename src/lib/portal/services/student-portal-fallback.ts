@@ -163,6 +163,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "45 min",
         type: "video",
         completed: true,
+      videoUrl: null,
       },
       {
         id: "ft-2",
@@ -170,6 +171,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "60 min",
         type: "video",
         completed: true,
+      videoUrl: null,
       },
       {
         id: "ft-3",
@@ -177,6 +179,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "40 min",
         type: "document",
         completed: false,
+      videoUrl: null,
       },
       {
         id: "ft-4",
@@ -184,6 +187,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "50 min",
         type: "quiz",
         completed: false,
+      videoUrl: null,
       },
     ],
   },
@@ -201,6 +205,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "90 min",
         type: "video",
         completed: true,
+      videoUrl: null,
       },
       {
         id: "ai-2",
@@ -208,6 +213,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "75 min",
         type: "video",
         completed: false,
+      videoUrl: null,
       },
       {
         id: "ai-3",
@@ -215,6 +221,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "80 min",
         type: "document",
         completed: false,
+      videoUrl: null,
       },
       {
         id: "ai-4",
@@ -222,6 +229,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "70 min",
         type: "video",
         completed: false,
+      videoUrl: null,
       },
       {
         id: "ai-5",
@@ -229,6 +237,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "60 min",
         type: "document",
         completed: false,
+      videoUrl: null,
       },
       {
         id: "ai-6",
@@ -236,6 +245,7 @@ const courseDetails: Record<string, PortalCourseDetail> = {
         duration: "120 min",
         type: "quiz",
         completed: false,
+      videoUrl: null,
       },
     ],
   },

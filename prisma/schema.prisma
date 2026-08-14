@@ -163,6 +163,7 @@ model CourseModule {
   duration  String
   type      ModuleType
   sortOrder Int        @default(0)
+  videoUrl  String?
 
   course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress ModuleProgress[]

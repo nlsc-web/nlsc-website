@@ -67,6 +67,7 @@ export type PortalModule = {
   duration: string;
   type: "video" | "document" | "quiz";
   completed: boolean;
+  videoUrl: string | null;
 };
 
 export type PortalCourseDetail = {

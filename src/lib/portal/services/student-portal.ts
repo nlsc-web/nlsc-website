@@ -284,6 +284,7 @@ async function loadStudentCourseDetailFromDb(
     duration: module.duration,
     type: module.type as PortalModule["type"],
     completed: completedIds.has(module.id),
+    videoUrl: module.videoUrl ?? null,
   }));
 
   const totalModules = enrollment.course.modules.length;
