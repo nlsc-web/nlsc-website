@@ -1,6 +1,9 @@
 "use client";
 
-import { EnrollStudentModal } from "@/components/portal/lms/AdminActionModals";
+import {
+  EditUserModal,
+  EnrollStudentModal,
+} from "@/components/portal/lms/AdminActionModals";
 import {
   ChevronRightIcon,
   GraduationCapIcon,
@@ -9,11 +12,12 @@ import {
 } from "@/components/portal/lms/icons";
 import StatCard from "@/components/portal/lms/StatCard";
 import UserStatusBadge from "@/components/portal/lms/UserStatusBadge";
-import { lmsTokens } from "@/lib/portal/lms-tokens";
+import { deleteAdminUser } from "@/lib/portal/admin-api";
 import {
   getInitials,
   type AdminStudent,
 } from "@/lib/portal/admin-data";
+import { lmsTokens } from "@/lib/portal/lms-tokens";
 import { useMemo, useState } from "react";
 
 type FilterKey = "all" | "active" | "pending" | "suspended";
@@ -42,6 +46,8 @@ export default function AdminStudentsView({
   const [query, setQuery] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState<AdminStudent | null>(null);
+  const [editing, setEditing] = useState<AdminStudent | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const counts = useMemo(
     () => ({
@@ -67,6 +73,20 @@ export default function AdminStudentsView({
     });
   }, [filter, query, students]);
 
+  async function handleDelete(id: string) {
+    if (!window.confirm("Delete this student permanently?")) return;
+    setBusyId(id);
+    setMenuOpenId(null);
+    try {
+      await deleteAdminUser(id);
+      await onChanged?.();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <>
       {enrolling && (
@@ -75,6 +95,20 @@ export default function AdminStudentsView({
           courses={courses}
           onClose={() => setEnrolling(null)}
           onEnrolled={async () => {
+            await onChanged?.();
+          }}
+        />
+      )}
+      {editing && (
+        <EditUserModal
+          user={{
+            id: editing.id,
+            name: editing.name,
+            email: editing.email,
+            role: "student",
+          }}
+          onClose={() => setEditing(null)}
+          onSaved={async () => {
             await onChanged?.();
           }}
         />
@@ -211,6 +245,7 @@ export default function AdminStudentsView({
                   <StudentRow
                     key={student.id}
                     student={student}
+                    busy={busyId === student.id}
                     menuOpen={menuOpenId === student.id}
                     onToggleMenu={() =>
                       setMenuOpenId((current) =>
@@ -221,6 +256,11 @@ export default function AdminStudentsView({
                       setMenuOpenId(null);
                       setEnrolling(student);
                     }}
+                    onEdit={() => {
+                      setMenuOpenId(null);
+                      setEditing(student);
+                    }}
+                    onDelete={() => handleDelete(student.id)}
                   />
                 ))
               )}
@@ -250,14 +290,20 @@ export default function AdminStudentsView({
 
 function StudentRow({
   student,
+  busy,
   menuOpen,
   onToggleMenu,
   onEnroll,
+  onEdit,
+  onDelete,
 }: {
   student: AdminStudent;
+  busy: boolean;
   menuOpen: boolean;
   onToggleMenu: () => void;
   onEnroll: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <tr className="transition-colors hover:bg-neutral-50/80">
@@ -326,8 +372,9 @@ function StudentRow({
       <td className="relative py-3 text-right sm:py-3.5">
         <button
           type="button"
+          disabled={busy}
           onClick={onToggleMenu}
-          className="rounded p-1 hover:bg-neutral-100"
+          className="rounded p-1 hover:bg-neutral-100 disabled:opacity-60"
           aria-label={`Actions for ${student.name}`}
         >
           <MoreHorizontalIcon size={16} color={lmsTokens.slate} />
@@ -344,6 +391,21 @@ function StudentRow({
               onClick={onEnroll}
             >
               Enroll in course
+            </button>
+            <button
+              type="button"
+              className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-nlsc-gold/5"
+              style={{ color: lmsTokens.ink }}
+              onClick={onEdit}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              className="block w-full px-3 py-2 text-left text-xs font-semibold text-red-700 hover:bg-red-50"
+              onClick={onDelete}
+            >
+              Delete
             </button>
           </div>
         )}
