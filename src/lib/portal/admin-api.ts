@@ -46,6 +46,22 @@ export async function postAdminUser(body: {
   return data;
 }
 
+export async function postAdminEnrollment(body: {
+  studentId: string;
+  courseId: string;
+}) {
+  const response = await fetch("/api/portal/admin/enrollments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? "Unable to enroll student.");
+  }
+  return data;
+}
+
 export async function postAdminCourse(body: {
   id: string;
   code: string;

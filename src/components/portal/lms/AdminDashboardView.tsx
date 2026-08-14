@@ -536,7 +536,13 @@ function AdminMainContent({
       return (
         <AdminStudentsView
           students={portalData.students}
+          courses={portalData.courses.map((c) => ({
+            id: c.id,
+            code: c.code,
+            title: c.title,
+          }))}
           onAddStudent={() => onAddUser("student")}
+          onChanged={onRefresh}
         />
       );
     case "Instructors":

@@ -1,5 +1,6 @@
 "use client";
 
+import { EnrollStudentModal } from "@/components/portal/lms/AdminActionModals";
 import {
   ChevronRightIcon,
   GraduationCapIcon,
@@ -26,15 +27,21 @@ const filters: { key: FilterKey; label: string }[] = [
 
 type AdminStudentsViewProps = {
   students: AdminStudent[];
+  courses: Array<{ id: string; code: string; title: string }>;
   onAddStudent?: () => void;
+  onChanged?: () => Promise<void> | void;
 };
 
 export default function AdminStudentsView({
   students,
+  courses,
   onAddStudent,
+  onChanged,
 }: AdminStudentsViewProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState<AdminStudent | null>(null);
 
   const counts = useMemo(
     () => ({
@@ -62,6 +69,17 @@ export default function AdminStudentsView({
 
   return (
     <>
+      {enrolling && (
+        <EnrollStudentModal
+          student={{ id: enrolling.id, name: enrolling.name }}
+          courses={courses}
+          onClose={() => setEnrolling(null)}
+          onEnrolled={async () => {
+            await onChanged?.();
+          }}
+        />
+      )}
+
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div
           className="border-l-2 pl-4 sm:pl-5"
@@ -119,74 +137,62 @@ export default function AdminStudentsView({
 
       <section className="lms-panel-card p-4 sm:p-5 lg:p-6">
         <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
-          <h2
-            className="flex items-center gap-2 text-sm font-semibold"
-            style={{ color: lmsTokens.ink }}
-          >
-            <GraduationCapIcon size={15} color={lmsTokens.gold500} />
-            All Students
+          <div className="flex items-center gap-2">
+            <GraduationCapIcon size={18} color={lmsTokens.gold500} />
+            <h2 className="text-sm font-semibold" style={{ color: lmsTokens.ink }}>
+              All Students
+            </h2>
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-bold"
               style={{ backgroundColor: lmsTokens.gold100, color: lmsTokens.navy800 }}
             >
               {filtered.length}
             </span>
-          </h2>
+          </div>
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, ID, or program..."
-            className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-nlsc-gold/50 sm:max-w-xs"
+            placeholder="Search by name, ID, program..."
+            className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:border-nlsc-gold/50 sm:w-64"
             style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
           />
         </div>
 
-        <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {filters.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors"
-              style={{
-                backgroundColor:
-                  filter === key ? lmsTokens.gold500 : "transparent",
-                color: filter === key ? lmsTokens.navy900 : lmsTokens.slate,
-                border: `1px solid ${filter === key ? lmsTokens.gold500 : lmsTokens.line}`,
-              }}
-            >
-              {label} ({counts[key]})
-            </button>
-          ))}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {filters.map((item) => {
+            const active = filter === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setFilter(item.key)}
+                className="rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors"
+                style={{
+                  backgroundColor: active ? lmsTokens.gold500 : lmsTokens.gold100,
+                  color: active ? lmsTokens.navy900 : lmsTokens.navy800,
+                }}
+              >
+                {item.label} ({counts[item.key]})
+              </button>
+            );
+          })}
         </div>
 
-        <div className="lms-table-scroll -mx-1 px-1">
-          <table className="w-full min-w-[640px] text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr
-                className="border-b text-left"
+                className="border-b text-[10px] font-bold uppercase tracking-wider"
                 style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}
               >
-                <th className="pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]">
-                  Student
-                </th>
-                <th className="hidden pb-3 text-[10px] font-bold uppercase tracking-[0.1em] md:table-cell sm:text-[11px]">
-                  Student ID
-                </th>
-                <th className="pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]">
-                  Program
-                </th>
-                <th className="hidden pb-3 text-[10px] font-bold uppercase tracking-[0.1em] lg:table-cell sm:text-[11px]">
-                  Attendance
-                </th>
-                <th className="pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:text-[11px]">
-                  Status
-                </th>
-                <th className="hidden pb-3 text-[10px] font-bold uppercase tracking-[0.1em] sm:table-cell sm:text-[11px]">
-                  Joined
-                </th>
-                <th className="pb-3 w-8" />
+                <th className="pb-3 pr-2 font-bold">Student</th>
+                <th className="hidden pb-3 font-bold md:table-cell">ID</th>
+                <th className="pb-3 font-bold">Program</th>
+                <th className="hidden pb-3 font-bold lg:table-cell">Attendance</th>
+                <th className="pb-3 font-bold">Status</th>
+                <th className="hidden pb-3 font-bold sm:table-cell">Joined</th>
+                <th className="pb-3 text-right font-bold"> </th>
               </tr>
             </thead>
             <tbody className="divide-y" style={{ borderColor: lmsTokens.line }}>
@@ -202,14 +208,30 @@ export default function AdminStudentsView({
                 </tr>
               ) : (
                 filtered.map((student) => (
-                  <StudentRow key={student.id} student={student} />
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    menuOpen={menuOpenId === student.id}
+                    onToggleMenu={() =>
+                      setMenuOpenId((current) =>
+                        current === student.id ? null : student.id,
+                      )
+                    }
+                    onEnroll={() => {
+                      setMenuOpenId(null);
+                      setEnrolling(student);
+                    }}
+                  />
                 ))
               )}
             </tbody>
           </table>
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t pt-4 text-xs" style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}>
+        <div
+          className="mt-4 flex items-center justify-between border-t pt-4 text-xs"
+          style={{ borderColor: lmsTokens.line, color: lmsTokens.slate }}
+        >
           <span>
             Showing {filtered.length} of {students.length} students
           </span>
@@ -226,7 +248,17 @@ export default function AdminStudentsView({
   );
 }
 
-function StudentRow({ student }: { student: AdminStudent }) {
+function StudentRow({
+  student,
+  menuOpen,
+  onToggleMenu,
+  onEnroll,
+}: {
+  student: AdminStudent;
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+  onEnroll: () => void;
+}) {
   return (
     <tr className="transition-colors hover:bg-neutral-50/80">
       <td className="py-3 pr-2 sm:py-3.5">
@@ -241,13 +273,22 @@ function StudentRow({ student }: { student: AdminStudent }) {
             {getInitials(student.name)}
           </div>
           <div className="min-w-0">
-            <div className="truncate text-xs font-medium sm:text-sm" style={{ color: lmsTokens.ink }}>
+            <div
+              className="truncate text-xs font-medium sm:text-sm"
+              style={{ color: lmsTokens.ink }}
+            >
               {student.name}
             </div>
-            <div className="truncate text-[11px] md:hidden" style={{ color: lmsTokens.slate }}>
+            <div
+              className="truncate text-[11px] md:hidden"
+              style={{ color: lmsTokens.slate }}
+            >
               {student.id}
             </div>
-            <div className="hidden truncate text-[11px] lg:hidden md:block" style={{ color: lmsTokens.slate }}>
+            <div
+              className="hidden truncate text-[11px] lg:hidden md:block"
+              style={{ color: lmsTokens.slate }}
+            >
               {student.email}
             </div>
           </div>
@@ -282,14 +323,30 @@ function StudentRow({ student }: { student: AdminStudent }) {
       >
         {student.joined}
       </td>
-      <td className="py-3 text-right sm:py-3.5">
+      <td className="relative py-3 text-right sm:py-3.5">
         <button
           type="button"
+          onClick={onToggleMenu}
           className="rounded p-1 hover:bg-neutral-100"
           aria-label={`Actions for ${student.name}`}
         >
           <MoreHorizontalIcon size={16} color={lmsTokens.slate} />
         </button>
+        {menuOpen && (
+          <div
+            className="absolute right-0 z-20 mt-1 w-40 rounded-lg border bg-white py-1 text-left shadow-lg"
+            style={{ borderColor: lmsTokens.line }}
+          >
+            <button
+              type="button"
+              className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-nlsc-gold/5"
+              style={{ color: lmsTokens.ink }}
+              onClick={onEnroll}
+            >
+              Enroll in course
+            </button>
+          </div>
+        )}
       </td>
     </tr>
   );

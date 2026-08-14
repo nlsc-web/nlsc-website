@@ -416,6 +416,88 @@ export function EditUserModal({ user, onClose, onSaved }: EditUserModalProps) {
   );
 }
 
+type EnrollStudentModalProps = {
+  student: { id: string; name: string };
+  courses: Array<{ id: string; code: string; title: string }>;
+  onClose: () => void;
+  onEnrolled: () => Promise<void> | void;
+};
+
+export function EnrollStudentModal({
+  student,
+  courses,
+  onClose,
+  onEnrolled,
+}: EnrollStudentModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const form = new FormData(event.currentTarget);
+    const courseId = String(form.get("courseId") ?? "").trim();
+
+    if (!courseId) {
+      setError("Select a course to enroll.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { postAdminEnrollment } = await import("@/lib/portal/admin-api");
+      await postAdminEnrollment({
+        studentId: student.id,
+        courseId,
+      });
+      await onEnrolled();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to enroll student.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AdminActionModal
+      title="Enroll in Course"
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      loading={loading}
+      error={error}
+    >
+      <div
+        className="rounded-lg border px-3 py-2 text-sm"
+        style={{ borderColor: lmsTokens.line, color: lmsTokens.ink }}
+      >
+        <p className="text-xs font-semibold" style={{ color: lmsTokens.slate }}>
+          Student
+        </p>
+        <p className="mt-0.5 font-medium">{student.name}</p>
+        <p className="text-xs" style={{ color: lmsTokens.slate }}>
+          {student.id}
+        </p>
+      </div>
+      <Field
+        label="Course"
+        name="courseId"
+        as="select"
+        required
+        options={[
+          { value: "", label: "Select a course" },
+          ...courses.map((c) => ({
+            value: c.id,
+            label: `${c.code} — ${c.title}`,
+          })),
+        ]}
+      />
+    </AdminActionModal>
+  );
+}
+
 type NewCourseModalProps = {
   instructors: Array<{ id: string; name: string }>;
   onClose: () => void;

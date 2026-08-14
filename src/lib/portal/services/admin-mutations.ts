@@ -143,6 +143,39 @@ export async function createPortalUser(input: CreateUserInput) {
   return user;
 }
 
+export async function enrollPortalStudent(studentId: string, courseId: string) {
+  const student = await prisma.user.findFirst({
+    where: { id: studentId, role: "student" },
+  });
+  if (!student) {
+    throw new Error("Student not found.");
+  }
+
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!course) {
+    throw new Error("Course not found.");
+  }
+
+  const existing = await prisma.enrollment.findUnique({
+    where: {
+      studentId_courseId: { studentId, courseId },
+    },
+  });
+  if (existing) {
+    throw new Error(`Student is already enrolled in ${course.code}.`);
+  }
+
+  return prisma.enrollment.create({
+    data: {
+      studentId,
+      courseId,
+      status: "active",
+      progressPercent: 0,
+      completedModules: 0,
+    },
+  });
+}
+
 export async function updatePortalUserStatus(
   id: string,
   status: "active" | "pending" | "suspended",
